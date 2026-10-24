@@ -1,0 +1,11 @@
+# Environment & secrets
+.env
+*.env
+backend/.env
+
+# Dependencies
+node_modules/
+backend/node_modules/
+.dart_tool/
+.packages
+build/
