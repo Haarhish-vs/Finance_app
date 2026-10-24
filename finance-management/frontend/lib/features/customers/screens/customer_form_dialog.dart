@@ -414,20 +414,26 @@ class _CustomerFormDialogState extends State<CustomerFormDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isMobile = screenWidth < 480.0;
+
     return Dialog(
-      insetPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.lg),
+      insetPadding: EdgeInsets.symmetric(
+        horizontal: isMobile ? 12.0 : AppSpacing.md,
+        vertical: isMobile ? 16.0 : AppSpacing.lg,
+      ),
       shape: const RoundedRectangleBorder(borderRadius: AppSpacing.roundedLg),
       child: LayoutBuilder(
         builder: (context, constraints) {
           final double dialogWidth = constraints.maxWidth > 640.0 ? 600.0 : double.infinity;
-          final isNarrow = constraints.maxWidth < 460.0;
+          final isNarrow = constraints.maxWidth < 480.0;
 
           return Container(
             width: dialogWidth,
             constraints: BoxConstraints(
               maxHeight: MediaQuery.of(context).size.height * 0.90,
             ),
-            padding: const EdgeInsets.all(AppSpacing.md + 4),
+            padding: EdgeInsets.all(isNarrow ? AppSpacing.md : AppSpacing.md + 4),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -448,19 +454,25 @@ class _CustomerFormDialogState extends State<CustomerFormDialog> {
                                     : 'Review & Edit Installment Schedule'),
                             style: Theme.of(context).textTheme.titleLarge?.copyWith(
                                   fontWeight: FontWeight.bold,
+                                  fontSize: isNarrow ? 17.0 : 19.0,
                                 ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
-                          if (!_isCustomerEditOnly)
+                          if (!_isCustomerEditOnly) ...[
+                            const SizedBox(height: 2.0),
                             Text(
                               _currentStep == 0
                                   ? 'Step 1 of 2: Borrower details & loan calculation'
                                   : 'Step 2 of 2: Confirm installment dates & amounts',
                               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                     color: AppColors.textMutedLight,
+                                    fontSize: 11.5,
                                   ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
+                          ],
                         ],
                       ),
                     ),
@@ -520,7 +532,7 @@ class _CustomerFormDialogState extends State<CustomerFormDialog> {
                 const SizedBox(height: AppSpacing.xs),
 
                 // Action buttons footer
-                _buildActionButtons(),
+                _buildActionButtons(isNarrow),
               ],
             ),
           );
@@ -594,73 +606,114 @@ class _CustomerFormDialogState extends State<CustomerFormDialog> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Section 1: Customer Profile Details
-            Text(
-              '1. Customer Information',
-              style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.primary,
-                  ),
-            ),
-            const SizedBox(height: AppSpacing.xs),
             Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  child: AppTextField(
-                    controller: _nameController,
-                    label: 'Customer Name *',
-                    hint: 'e.g. Senthil Kumar',
-                    prefixIcon: const Icon(Icons.person_outline),
-                    validator: (v) {
-                      if (v == null || v.trim().isEmpty) return 'Name is required';
-                      return null;
-                    },
-                  ),
-                ),
-                const SizedBox(width: AppSpacing.sm),
-                Expanded(
-                  child: AppTextField(
-                    controller: _phoneController,
-                    label: 'Phone Number *',
-                    hint: '9876543210',
-                    prefixIcon: const Icon(Icons.phone_outlined),
-                    keyboardType: TextInputType.phone,
-                    validator: (v) {
-                      if (v == null || v.trim().isEmpty) return 'Phone is required';
-                      if (!RegExp(r'^[0-9+ ]{10,15}$').hasMatch(v.trim())) {
-                        return 'Valid 10-15 digits required';
-                      }
-                      return null;
-                    },
-                  ),
+                const Icon(Icons.person_rounded, size: 18.0, color: AppColors.primary),
+                const SizedBox(width: 6.0),
+                Text(
+                  '1. Customer Information',
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.primary,
+                      ),
                 ),
               ],
             ),
+            const SizedBox(height: AppSpacing.xs),
+            if (isNarrow) ...[
+              AppTextField(
+                controller: _nameController,
+                label: 'Customer Name *',
+                hint: 'e.g. Senthil Kumar',
+                prefixIcon: const Icon(Icons.person_outline),
+                validator: (v) {
+                  if (v == null || v.trim().isEmpty) return 'Customer name is required';
+                  return null;
+                },
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              AppTextField(
+                controller: _phoneController,
+                label: 'Phone Number *',
+                hint: '9876543210',
+                prefixIcon: const Icon(Icons.phone_outlined),
+                keyboardType: TextInputType.phone,
+                validator: (v) {
+                  if (v == null || v.trim().isEmpty) return 'Phone number is required';
+                  if (!RegExp(r'^[0-9+ ]{10,15}$').hasMatch(v.trim())) {
+                    return 'Valid 10-15 digits required';
+                  }
+                  return null;
+                },
+              ),
+            ] else ...[
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: AppTextField(
+                      controller: _nameController,
+                      label: 'Customer Name *',
+                      hint: 'e.g. Senthil Kumar',
+                      prefixIcon: const Icon(Icons.person_outline),
+                      validator: (v) {
+                        if (v == null || v.trim().isEmpty) return 'Customer name is required';
+                        return null;
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: AppTextField(
+                      controller: _phoneController,
+                      label: 'Phone Number *',
+                      hint: '9876543210',
+                      prefixIcon: const Icon(Icons.phone_outlined),
+                      keyboardType: TextInputType.phone,
+                      validator: (v) {
+                        if (v == null || v.trim().isEmpty) return 'Phone number is required';
+                        if (!RegExp(r'^[0-9+ ]{10,15}$').hasMatch(v.trim())) {
+                          return 'Valid 10-15 digits required';
+                        }
+                        return null;
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ],
             const SizedBox(height: AppSpacing.md),
 
             // Section 2: Loan Financial Parameters
-            Text(
-              '2. Loan Parameters',
-              style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.primary,
-                  ),
+            Row(
+              children: [
+                const Icon(Icons.account_balance_wallet_rounded, size: 18.0, color: AppColors.primary),
+                const SizedBox(width: 6.0),
+                Text(
+                  '2. Loan Parameters',
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.primary,
+                      ),
+                ),
+              ],
             ),
             const SizedBox(height: AppSpacing.xs),
 
             // Principal and Interest Rate Row
             Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Expanded(
                   flex: 3,
                   child: AppTextField(
                     controller: _principalController,
-                    label: 'Principal Amount (${CurrencyFormatter.symbol}) *',
+                    label: 'Principal (${CurrencyFormatter.symbol}) *',
                     hint: '50000',
                     prefixIcon: const Icon(Icons.currency_rupee_rounded),
                     keyboardType: const TextInputType.numberWithOptions(decimal: true),
                     validator: (v) {
-                      if (v == null || v.trim().isEmpty) return 'Principal is required';
+                      if (v == null || v.trim().isEmpty) return 'Principal required';
                       final val = double.tryParse(v.trim());
                       if (val == null || val <= 0) return 'Must be > 0';
                       return null;
@@ -677,9 +730,9 @@ class _CustomerFormDialogState extends State<CustomerFormDialog> {
                     prefixIcon: const Icon(Icons.percent_rounded),
                     keyboardType: const TextInputType.numberWithOptions(decimal: true),
                     validator: (v) {
-                      if (v == null || v.trim().isEmpty) return 'Rate is required';
+                      if (v == null || v.trim().isEmpty) return 'Rate required';
                       final val = double.tryParse(v.trim());
-                      if (val == null || val < 0) return 'Must be >= 0';
+                      if (val == null || val < 0) return '>= 0';
                       return null;
                     },
                   ),
@@ -696,136 +749,233 @@ class _CustomerFormDialogState extends State<CustomerFormDialog> {
             ),
             const SizedBox(height: AppSpacing.sm),
 
-            // Frequency and Duration Row
-            Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Payment Frequency',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w600),
-                      ),
-                      const SizedBox(height: 4.0),
-                      SegmentedButton<String>(
-                        segments: const [
-                          ButtonSegment(value: 'monthly', label: Text('Monthly')),
-                          ButtonSegment(value: 'weekly', label: Text('Weekly')),
-                        ],
-                        selected: {_frequency},
-                        onSelectionChanged: (set) {
-                          setState(() {
-                            _frequency = set.first;
-                            _recomputeFirstDueDate();
-                          });
-                        },
-                      ),
-                    ],
+            // Payment Frequency Selection (Full width, avoids vertical label splitting)
+            Text(
+              'Payment Frequency',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimaryLight,
                   ),
-                ),
-                const SizedBox(width: AppSpacing.sm),
-                Expanded(
-                  child: AppTextField(
-                    controller: _durationController,
-                    label: _frequency == 'weekly' ? 'Duration (Weeks) *' : 'Duration (Months) *',
-                    hint: _frequency == 'weekly' ? '24' : '10',
-                    prefixIcon: const Icon(Icons.schedule_rounded),
-                    keyboardType: TextInputType.number,
-                    validator: (v) {
-                      if (v == null || v.trim().isEmpty) return 'Duration is required';
-                      final val = int.tryParse(v.trim());
-                      if (val == null || val <= 0) return 'Must be >= 1';
-                      return null;
-                    },
+            ),
+            const SizedBox(height: 6.0),
+            SizedBox(
+              width: double.infinity,
+              child: SegmentedButton<String>(
+                showSelectedIcon: true,
+                segments: const [
+                  ButtonSegment(
+                    value: 'monthly',
+                    label: Text('Monthly'),
+                    icon: Icon(Icons.calendar_month_outlined, size: 16.0),
                   ),
-                ),
-              ],
+                  ButtonSegment(
+                    value: 'weekly',
+                    label: Text('Weekly'),
+                    icon: Icon(Icons.view_week_outlined, size: 16.0),
+                  ),
+                ],
+                selected: {_frequency},
+                onSelectionChanged: (set) {
+                  setState(() {
+                    _frequency = set.first;
+                    _recomputeFirstDueDate();
+                  });
+                },
+              ),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+
+            // Duration Field
+            AppTextField(
+              controller: _durationController,
+              label: _frequency == 'weekly' ? 'Duration (Number of Weeks) *' : 'Duration (Number of Months) *',
+              hint: _frequency == 'weekly' ? 'e.g. 24' : 'e.g. 10',
+              prefixIcon: const Icon(Icons.schedule_rounded),
+              keyboardType: TextInputType.number,
+              validator: (v) {
+                if (v == null || v.trim().isEmpty) return 'Duration is required';
+                final val = int.tryParse(v.trim());
+                if (val == null || val <= 0) return 'Must be >= 1';
+                return null;
+              },
             ),
             const SizedBox(height: AppSpacing.sm),
 
             // Dates Row (Start Date & First Due Date)
-            Row(
-              children: [
-                Expanded(
-                  child: InkWell(
-                    onTap: () async {
-                      final picked = await showDatePicker(
-                        context: context,
-                        initialDate: _startDate,
-                        firstDate: DateTime(2020),
-                        lastDate: DateTime(2035),
-                      );
-                      if (picked != null) {
-                        setState(() {
-                          _startDate = picked;
-                          _recomputeFirstDueDate();
-                        });
-                      }
-                    },
-                    borderRadius: AppSpacing.roundedSm,
-                    child: InputDecorator(
-                      decoration: const InputDecoration(
-                        labelText: 'Loan Start Date',
-                        prefixIcon: Icon(Icons.calendar_today_rounded, size: 18.0),
-                      ),
-                      child: Text(
-                        _formatDate(_startDate),
-                        style: Theme.of(context).textTheme.bodyMedium,
-                      ),
+            if (isNarrow) ...[
+              _buildDatePickerTile(
+                label: 'Loan Start Date',
+                date: _startDate,
+                icon: Icons.calendar_today_rounded,
+                onTap: () async {
+                  final picked = await showDatePicker(
+                    context: context,
+                    initialDate: _startDate,
+                    firstDate: DateTime(2020),
+                    lastDate: DateTime(2035),
+                  );
+                  if (picked != null) {
+                    setState(() {
+                      _startDate = picked;
+                      _recomputeFirstDueDate();
+                    });
+                  }
+                },
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              _buildDatePickerTile(
+                label: 'First Due Date',
+                date: _firstDueDate,
+                icon: Icons.event_available_rounded,
+                helper: _frequency == 'weekly' ? '1 wk default' : '1 mo default',
+                onTap: () async {
+                  final picked = await showDatePicker(
+                    context: context,
+                    initialDate: _firstDueDate,
+                    firstDate: _startDate,
+                    lastDate: DateTime(2035),
+                  );
+                  if (picked != null) {
+                    setState(() {
+                      _firstDueDate = picked;
+                    });
+                  }
+                },
+              ),
+            ] else ...[
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildDatePickerTile(
+                      label: 'Loan Start Date',
+                      date: _startDate,
+                      icon: Icons.calendar_today_rounded,
+                      onTap: () async {
+                        final picked = await showDatePicker(
+                          context: context,
+                          initialDate: _startDate,
+                          firstDate: DateTime(2020),
+                          lastDate: DateTime(2035),
+                        );
+                        if (picked != null) {
+                          setState(() {
+                            _startDate = picked;
+                            _recomputeFirstDueDate();
+                          });
+                        }
+                      },
                     ),
                   ),
-                ),
-                const SizedBox(width: AppSpacing.sm),
-                Expanded(
-                  child: InkWell(
-                    onTap: () async {
-                      final picked = await showDatePicker(
-                        context: context,
-                        initialDate: _firstDueDate,
-                        firstDate: _startDate,
-                        lastDate: DateTime(2035),
-                      );
-                      if (picked != null) {
-                        setState(() {
-                          _firstDueDate = picked;
-                        });
-                      }
-                    },
-                    borderRadius: AppSpacing.roundedSm,
-                    child: InputDecorator(
-                      decoration: const InputDecoration(
-                        labelText: 'First Due Date',
-                        prefixIcon: Icon(Icons.event_available_rounded, size: 18.0),
-                      ),
-                      child: Text(
-                        _formatDate(_firstDueDate),
-                        style: Theme.of(context).textTheme.bodyMedium,
-                      ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: _buildDatePickerTile(
+                      label: 'First Due Date',
+                      date: _firstDueDate,
+                      icon: Icons.event_available_rounded,
+                      helper: _frequency == 'weekly' ? '1 wk default' : '1 mo default',
+                      onTap: () async {
+                        final picked = await showDatePicker(
+                          context: context,
+                          initialDate: _firstDueDate,
+                          firstDate: _startDate,
+                          lastDate: DateTime(2035),
+                        );
+                        if (picked != null) {
+                          setState(() {
+                            _firstDueDate = picked;
+                          });
+                        }
+                      },
                     ),
                   ),
-                ),
-              ],
-            ),
+                ],
+              ),
+            ],
             const SizedBox(height: AppSpacing.md),
 
             // Section 3: Live Calculation Preview Card
-            Text(
-              '3. Live Calculation Preview',
-              style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.primary,
-                  ),
+            Row(
+              children: [
+                const Icon(Icons.calculate_rounded, size: 18.0, color: AppColors.primary),
+                const SizedBox(width: 6.0),
+                Text(
+                  '3. Live Calculation Preview',
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.primary,
+                      ),
+                ),
+              ],
             ),
             const SizedBox(height: AppSpacing.xs),
-            _buildLiveCalculationCard(),
+            _buildLiveCalculationCard(isNarrow),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildLiveCalculationCard() {
+  Widget _buildDatePickerTile({
+    required String label,
+    required DateTime date,
+    required IconData icon,
+    String? helper,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: AppSpacing.roundedSm,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 10.0),
+        decoration: BoxDecoration(
+          color: AppColors.surfaceLight,
+          borderRadius: AppSpacing.roundedSm,
+          border: Border.all(color: AppColors.borderLight),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, size: 18.0, color: AppColors.primary),
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    label,
+                    style: const TextStyle(
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.textMutedLight,
+                    ),
+                  ),
+                  const SizedBox(height: 2.0),
+                  Text(
+                    _formatDate(date),
+                    style: const TextStyle(
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textPrimaryLight,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (helper != null) ...[
+              Text(
+                helper,
+                style: const TextStyle(fontSize: 11.0, color: AppColors.textMutedLight),
+              ),
+              const SizedBox(width: 4.0),
+            ],
+            const Icon(Icons.arrow_drop_down_rounded, color: AppColors.textMutedLight),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLiveCalculationCard(bool isNarrow) {
     final principal = _currentPrincipal;
     final rate = _currentRate;
     final totalInterest = _calculatedTotalInterest;
@@ -836,7 +986,6 @@ class _CustomerFormDialogState extends State<CustomerFormDialog> {
     final finalDueStr = _formatDate(_calculatedFinalDueDate);
 
     return Container(
-      padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
         color: AppColors.surfaceLight,
         borderRadius: AppSpacing.roundedMd,
@@ -844,87 +993,195 @@ class _CustomerFormDialogState extends State<CustomerFormDialog> {
       ),
       child: Column(
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: _buildMetricTile(
-                  'Principal Amount',
-                  CurrencyFormatter.format(principal),
-                  AppColors.primary,
-                ),
+          // Highlight summary bar: Total Repayment & Installment Amount
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: 10.0),
+            decoration: BoxDecoration(
+              color: AppColors.primary.withAlpha(14),
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(AppSpacing.radiusMd),
+                topRight: Radius.circular(AppSpacing.radiusMd),
               ),
-              Expanded(
-                child: _buildMetricTile(
-                  'Monthly Rate',
-                  '${rate.toStringAsFixed(1)}% / mo',
-                  AppColors.textPrimaryLight,
-                ),
+              border: const Border(
+                bottom: BorderSide(color: AppColors.borderLight),
               ),
-              Expanded(
-                child: _buildMetricTile(
-                  'Total Interest',
-                  CurrencyFormatter.format(totalInterest),
-                  AppColors.secondary,
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Total Repayment',
+                        style: TextStyle(
+                          fontSize: 11.0,
+                          fontWeight: FontWeight.w500,
+                          color: AppColors.textMutedLight,
+                        ),
+                      ),
+                      const SizedBox(height: 2.0),
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          CurrencyFormatter.format(totalRepayment),
+                          style: const TextStyle(
+                            fontSize: 17.0,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.success,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            ],
+                Container(
+                  height: 32.0,
+                  width: 1.0,
+                  color: AppColors.borderLight,
+                  margin: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+                ),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        _frequency == 'weekly' ? 'Weekly Due' : 'Monthly Due',
+                        style: const TextStyle(
+                          fontSize: 11.0,
+                          fontWeight: FontWeight.w500,
+                          color: AppColors.textMutedLight,
+                        ),
+                      ),
+                      const SizedBox(height: 2.0),
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          CurrencyFormatter.format(installmentAmount),
+                          style: const TextStyle(
+                            fontSize: 17.0,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.primary,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
-          const Divider(height: AppSpacing.md),
-          Row(
-            children: [
-              Expanded(
-                child: _buildMetricTile(
-                  'Total Repayment',
-                  CurrencyFormatter.format(totalRepayment),
-                  AppColors.success,
-                  isBold: true,
-                ),
-              ),
-              Expanded(
-                child: _buildMetricTile(
-                  'Installment Amount',
-                  CurrencyFormatter.format(installmentAmount),
-                  AppColors.primary,
-                  isBold: true,
-                ),
-              ),
-              Expanded(
-                child: _buildMetricTile(
-                  'Installments Count',
-                  '$totalInstallments ${_frequency == 'weekly' ? 'Weeks' : 'Months'}',
-                  AppColors.textPrimaryLight,
-                ),
-              ),
-            ],
-          ),
-          const Divider(height: AppSpacing.md),
-          Row(
-            children: [
-              Expanded(
-                child: Row(
+
+          // 2-Column Key Financial Metrics Grid
+          Padding(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            child: Column(
+              children: [
+                Row(
                   children: [
-                    const Icon(Icons.date_range_rounded, size: 16.0, color: AppColors.textMutedLight),
-                    const SizedBox(width: 4.0),
-                    Text(
-                      'First Due: $firstDueStr',
-                      style: const TextStyle(fontSize: 12.0, fontWeight: FontWeight.w500),
+                    Expanded(
+                      child: _buildMetricTile(
+                        'Principal Amount',
+                        CurrencyFormatter.format(principal),
+                        AppColors.primary,
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
+                    Expanded(
+                      child: _buildMetricTile(
+                        'Monthly Interest Rate',
+                        '${rate.toStringAsFixed(1)}% / mo',
+                        AppColors.textPrimaryLight,
+                      ),
                     ),
                   ],
                 ),
-              ),
-              Expanded(
-                child: Row(
+                const SizedBox(height: AppSpacing.sm),
+                Row(
                   children: [
-                    const Icon(Icons.event_note_rounded, size: 16.0, color: AppColors.textMutedLight),
-                    const SizedBox(width: 4.0),
-                    Text(
-                      'Final Due: $finalDueStr',
-                      style: const TextStyle(fontSize: 12.0, fontWeight: FontWeight.w500),
+                    Expanded(
+                      child: _buildMetricTile(
+                        'Total Interest',
+                        CurrencyFormatter.format(totalInterest),
+                        AppColors.secondary,
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
+                    Expanded(
+                      child: _buildMetricTile(
+                        'Tenure & Count',
+                        '$totalInstallments ${_frequency == 'weekly' ? 'Weeks' : 'Months'}',
+                        AppColors.textPrimaryLight,
+                      ),
                     ),
                   ],
                 ),
-              ),
-            ],
+                const Divider(height: AppSpacing.md),
+
+                // Due Dates Schedule Row (Overflow-proof)
+                Row(
+                  children: [
+                    Expanded(
+                      child: Row(
+                        children: [
+                          const Icon(Icons.calendar_today_rounded, size: 14.0, color: AppColors.textMutedLight),
+                          const SizedBox(width: 4.0),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'First Due',
+                                  style: TextStyle(fontSize: 10.5, color: AppColors.textMutedLight),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                Text(
+                                  firstDueStr,
+                                  style: const TextStyle(fontSize: 12.0, fontWeight: FontWeight.w600),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
+                    Expanded(
+                      child: Row(
+                        children: [
+                          const Icon(Icons.event_note_rounded, size: 14.0, color: AppColors.textMutedLight),
+                          const SizedBox(width: 4.0),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'Final Due',
+                                  style: TextStyle(fontSize: 10.5, color: AppColors.textMutedLight),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                Text(
+                                  finalDueStr,
+                                  style: const TextStyle(fontSize: 12.0, fontWeight: FontWeight.w600),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -934,6 +1191,7 @@ class _CustomerFormDialogState extends State<CustomerFormDialog> {
   Widget _buildMetricTile(String label, String value, Color color, {bool isBold = false}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
       children: [
         Text(
           label,
@@ -942,15 +1200,17 @@ class _CustomerFormDialogState extends State<CustomerFormDialog> {
           overflow: TextOverflow.ellipsis,
         ),
         const SizedBox(height: 2.0),
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: isBold ? 14.0 : 13.0,
-            fontWeight: isBold ? FontWeight.bold : FontWeight.w600,
-            color: color,
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerLeft,
+          child: Text(
+            value,
+            style: TextStyle(
+              fontSize: isBold ? 14.0 : 13.0,
+              fontWeight: isBold ? FontWeight.bold : FontWeight.w600,
+              color: color,
+            ),
           ),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
         ),
       ],
     );
@@ -976,16 +1236,23 @@ class _CustomerFormDialogState extends State<CustomerFormDialog> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('Scheduled Repayment Total', style: TextStyle(fontSize: 11.0, color: AppColors.textMutedLight)),
-                  Text(
-                    CurrencyFormatter.format(_revisedTotalRepayment),
-                    style: const TextStyle(fontSize: 15.0, fontWeight: FontWeight.bold),
-                  ),
-                ],
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Scheduled Repayment Total', style: TextStyle(fontSize: 11.0, color: AppColors.textMutedLight)),
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        CurrencyFormatter.format(_revisedTotalRepayment),
+                        style: const TextStyle(fontSize: 15.0, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ],
+                ),
               ),
+              const SizedBox(width: AppSpacing.sm),
               if (hasDiff) ...[
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
@@ -1067,17 +1334,22 @@ class _CustomerFormDialogState extends State<CustomerFormDialog> {
                           onTap: () => _pickInstallmentDueDate(index),
                           borderRadius: AppSpacing.roundedXs,
                           child: Row(
+                            mainAxisSize: MainAxisSize.min,
                             children: [
                               const Icon(Icons.edit_calendar_rounded, size: 15.0, color: AppColors.primary),
                               const SizedBox(width: 4.0),
-                              Text(
-                                dueDate,
-                                style: const TextStyle(fontSize: 13.0, fontWeight: FontWeight.w500),
+                              Flexible(
+                                child: Text(
+                                  dueDate,
+                                  style: const TextStyle(fontSize: 13.0, fontWeight: FontWeight.w500),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
                               ),
                             ],
                           ),
                         ),
                       ),
+                      const SizedBox(width: 6.0),
 
                       // Amount (Tap to edit)
                       InkWell(
@@ -1117,16 +1389,15 @@ class _CustomerFormDialogState extends State<CustomerFormDialog> {
     );
   }
 
-  Widget _buildActionButtons() {
+  Widget _buildActionButtons(bool isNarrow) {
     if (_isCustomerEditOnly) {
       return Row(
-        mainAxisAlignment: MainAxisAlignment.end,
         children: [
           TextButton(
             onPressed: _isSubmitting ? null : () => Navigator.of(context).pop(),
             child: const Text('Cancel'),
           ),
-          const SizedBox(width: AppSpacing.sm),
+          const Spacer(),
           AppButton(
             text: 'Save Changes',
             icon: Icons.check_circle_rounded,
@@ -1139,35 +1410,47 @@ class _CustomerFormDialogState extends State<CustomerFormDialog> {
 
     if (_currentStep == 0) {
       return Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           TextButton(
             onPressed: _isSubmitting ? null : () => Navigator.of(context).pop(),
+            style: TextButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: 12.0),
+            ),
             child: const Text('Cancel'),
           ),
-          AppButton(
-            text: 'Review Schedule ($_currentDuration ${_frequency == 'weekly' ? 'Weeks' : 'Months'})',
-            icon: Icons.arrow_forward_rounded,
-            isLoading: _isSubmitting,
-            onPressed: _isSubmitting ? null : _proceedToScheduleReview,
+          const SizedBox(width: AppSpacing.xs),
+          Expanded(
+            child: AppButton(
+              text: isNarrow
+                  ? 'Review Schedule'
+                  : 'Review Schedule ($_currentDuration ${_frequency == 'weekly' ? 'Weeks' : 'Months'})',
+              icon: Icons.arrow_forward_rounded,
+              isLoading: _isSubmitting,
+              onPressed: _isSubmitting ? null : _proceedToScheduleReview,
+            ),
           ),
         ],
       );
     }
 
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         OutlinedButton.icon(
           onPressed: _isSubmitting ? null : () => setState(() => _currentStep = 0),
           icon: const Icon(Icons.arrow_back_rounded, size: 16.0),
-          label: const Text('Parameters'),
+          label: Text(isNarrow ? 'Back' : 'Parameters'),
+          style: OutlinedButton.styleFrom(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: 12.0),
+          ),
         ),
-        AppButton(
-          text: 'Confirm & Disburse Loan',
-          icon: Icons.check_circle_rounded,
-          isLoading: _isSubmitting,
-          onPressed: _isSubmitting ? null : _confirmAndDisburseLoan,
+        const SizedBox(width: AppSpacing.xs),
+        Expanded(
+          child: AppButton(
+            text: isNarrow ? 'Confirm Loan' : 'Confirm & Disburse Loan',
+            icon: Icons.check_circle_rounded,
+            isLoading: _isSubmitting,
+            onPressed: _isSubmitting ? null : _confirmAndDisburseLoan,
+          ),
         ),
       ],
     );
