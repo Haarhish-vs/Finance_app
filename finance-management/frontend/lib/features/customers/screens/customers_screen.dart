@@ -266,44 +266,50 @@ class _CustomersScreenState extends State<CustomersScreen> {
           final isActive = customer.isActive;
 
           return Card(
+            elevation: 1,
+            shape: const RoundedRectangleBorder(borderRadius: AppSpacing.roundedSm),
             child: InkWell(
-              borderRadius: AppSpacing.roundedMd,
+              borderRadius: AppSpacing.roundedSm,
               onTap: () => _navigateToCustomerDetails(customer),
               child: Padding(
-                padding: const EdgeInsets.all(AppSpacing.md),
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: 12.0),
                 child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     CircleAvatar(
-                      radius: 22.0,
+                      radius: 20.0,
                       backgroundColor: AppColors.primaryContainer,
                       child: Text(
                         customer.fullName.trim().split(' ').map((s) => s.isNotEmpty ? s[0] : '').take(2).join(),
                         style: const TextStyle(
                           color: AppColors.primary,
                           fontWeight: FontWeight.bold,
+                          fontSize: 13.0,
                         ),
                       ),
                     ),
-                    const SizedBox(width: AppSpacing.md),
+                    const SizedBox(width: AppSpacing.sm + 4),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
                         children: [
                           Row(
                             children: [
                               Flexible(
                                 child: Text(
                                   customer.fullName,
-                                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
                                         fontWeight: FontWeight.bold,
+                                        fontSize: 14.0,
                                       ),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                 ),
                               ),
-                              const SizedBox(width: AppSpacing.sm),
+                              const SizedBox(width: 6.0),
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 6.0, vertical: 2.0),
+                                padding: const EdgeInsets.symmetric(horizontal: 5.0, vertical: 1.5),
                                 decoration: BoxDecoration(
                                   color: isActive ? AppColors.successContainer : AppColors.secondaryContainer,
                                   borderRadius: AppSpacing.roundedXs,
@@ -311,7 +317,7 @@ class _CustomersScreenState extends State<CustomersScreen> {
                                 child: Text(
                                   customer.status.toUpperCase(),
                                   style: TextStyle(
-                                    fontSize: 10.0,
+                                    fontSize: 9.0,
                                     fontWeight: FontWeight.bold,
                                     color: isActive ? AppColors.onSuccessContainer : AppColors.secondary,
                                   ),
@@ -320,56 +326,74 @@ class _CustomersScreenState extends State<CustomersScreen> {
                             ],
                           ),
                           const SizedBox(height: 3.0),
-                          Wrap(
-                            spacing: AppSpacing.md,
-                            runSpacing: 2.0,
-                            children: [
-                              if (customer.phone != null)
-                                Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    const Icon(Icons.phone, size: 13.0, color: AppColors.secondary),
-                                    const SizedBox(width: 4.0),
-                                    Text(customer.phone!, style: Theme.of(context).textTheme.bodySmall),
-                                  ],
+                          if (customer.phone != null && customer.phone!.isNotEmpty) ...[
+                            Row(
+                              children: [
+                                const Icon(Icons.phone_outlined, size: 12.0, color: AppColors.secondary),
+                                const SizedBox(width: 4.0),
+                                Flexible(
+                                  child: Text(
+                                    customer.phone!,
+                                    style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 11.5),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
                                 ),
-                              if (customer.idNumber != null)
-                                Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    const Icon(Icons.badge, size: 13.0, color: AppColors.secondary),
-                                    const SizedBox(width: 4.0),
-                                    Text(
-                                      '${customer.idType ?? 'ID'}: ${customer.idNumber}',
-                                      style: Theme.of(context).textTheme.bodySmall,
-                                    ),
-                                  ],
+                              ],
+                            ),
+                          ],
+                          if (customer.idNumber != null && customer.idNumber!.isNotEmpty) ...[
+                            const SizedBox(height: 2.0),
+                            Row(
+                              children: [
+                                const Icon(Icons.badge_outlined, size: 12.0, color: AppColors.secondary),
+                                const SizedBox(width: 4.0),
+                                Flexible(
+                                  child: Text(
+                                    '${customer.idType ?? 'ID'}: ${customer.idNumber}',
+                                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                          color: AppColors.textMutedLight,
+                                          fontSize: 11.0,
+                                        ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
                                 ),
-                            ],
-                          ),
+                              ],
+                            ),
+                          ],
                         ],
                       ),
                     ),
                     const SizedBox(width: AppSpacing.sm),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text(
-                          CurrencyFormatter.format(customer.initialAmountCollected),
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              CurrencyFormatter.format(customer.initialAmountCollected),
+                              style: TextStyle(
                                 fontWeight: FontWeight.bold,
-                                color: AppColors.onSuccessContainer,
+                                fontSize: 13.0,
+                                color: customer.initialAmountCollected > 0
+                                    ? AppColors.onSuccessContainer
+                                    : AppColors.textPrimaryLight,
                               ),
+                            ),
+                            const SizedBox(height: 1.0),
+                            const Text(
+                              'Initial Deposit',
+                              style: TextStyle(fontSize: 9.5, color: AppColors.textMutedLight),
+                            ),
+                          ],
                         ),
-                        const SizedBox(height: 2.0),
-                        const Text(
-                          'Initial Deposit',
-                          style: TextStyle(fontSize: 10.0, color: AppColors.textMutedLight),
-                        ),
+                        const SizedBox(width: 4.0),
+                        const Icon(Icons.chevron_right_rounded, color: AppColors.textMutedLight, size: 18.0),
                       ],
                     ),
-                    const SizedBox(width: AppSpacing.xs),
-                    const Icon(Icons.chevron_right_rounded, color: AppColors.textMutedLight, size: 20.0),
                   ],
                 ),
               ),
