@@ -8,7 +8,7 @@ class AppConfig {
   AppConfig._();
 
   /// Application display name
-  static const String appName = 'Finance Manager';
+  static const String appName = 'finance-app';
 
   /// Application version
   static const String appVersion = '1.0.0';
