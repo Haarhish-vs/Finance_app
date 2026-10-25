@@ -346,9 +346,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                TextButton(
-                  onPressed: () => widget.onNavigateTab?.call(2),
-                  child: const Text('View All Plans'),
+                Flexible(
+                  child: TextButton(
+                    onPressed: () => widget.onNavigateTab?.call(2),
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                      visualDensity: VisualDensity.compact,
+                    ),
+                    child: const Text('View All', maxLines: 1, overflow: TextOverflow.ellipsis),
+                  ),
                 ),
               ],
             ),
@@ -451,9 +457,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                TextButton(
-                  onPressed: () => widget.onNavigateTab?.call(1),
-                  child: const Text('View All Customers'),
+                Flexible(
+                  child: TextButton(
+                    onPressed: () => widget.onNavigateTab?.call(1),
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                      visualDensity: VisualDensity.compact,
+                    ),
+                    child: const Text('View All', maxLines: 1, overflow: TextOverflow.ellipsis),
+                  ),
                 ),
               ],
             ),

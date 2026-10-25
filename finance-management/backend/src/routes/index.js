@@ -4,6 +4,7 @@ const customerRoutes = require('../modules/customers/routes');
 const loanRoutes = require('../modules/payment-plans/routes');
 const installmentRoutes = require('../modules/installments/routes');
 const paymentRoutes = require('../modules/payments/routes');
+const reportsRoutes = require('../modules/reports/routes');
 
 const apiRouter = Router();
 
@@ -22,5 +23,8 @@ apiRouter.use('/installments', installmentRoutes);
 
 // Mount payment routes under /payments
 apiRouter.use('/payments', paymentRoutes);
+
+// Mount reports routes under /reports -> /api/v1/reports, /api/v1/reports/export-csv
+apiRouter.use('/reports', reportsRoutes);
 
 module.exports = apiRouter;
