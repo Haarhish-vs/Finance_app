@@ -312,7 +312,11 @@ class _CustomerFormDialogState extends State<CustomerFormDialog> {
       _errorMessage = null;
     });
 
+    final String clientRequestId = 'LN-${DateTime.now().millisecondsSinceEpoch}';
+
     final payload = <String, dynamic>{
+      'idempotency_key': clientRequestId,
+      'plan_code': clientRequestId,
       'customer_id': widget.initialCustomer?.id,
       'name': _nameController.text.trim(),
       'customer_name': _nameController.text.trim(),
@@ -624,7 +628,7 @@ class _CustomerFormDialogState extends State<CustomerFormDialog> {
               AppTextField(
                 controller: _nameController,
                 label: 'Customer Name *',
-                hint: 'e.g. Senthil Kumar',
+                hint: 'e.g. ashok',
                 prefixIcon: const Icon(Icons.person_outline),
                 validator: (v) {
                   if (v == null || v.trim().isEmpty) return 'Customer name is required';

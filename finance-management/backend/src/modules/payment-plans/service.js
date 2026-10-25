@@ -94,8 +94,40 @@ class LoanService {
     const scheduled = this.previewLoan(data);
     const summary = scheduled.summary;
 
-    const planCode = data.plan_code || `LN-${Date.now().toString().slice(-6)}`;
+    const planCode = data.plan_code || (data.idempotency_key ? data.idempotency_key : `LN-${Date.now().toString().slice(-6)}`);
     const loanTitle = data.title || `${summary.frequency === 'weekly' ? 'Weekly' : 'Monthly'} Loan - ${planCode}`;
+
+    // 1. Check for exact plan_code (idempotency key) replay
+    const existingByCode = await loanRepository.findByPlanCode(planCode);
+    if (existingByCode) {
+      const existingInstallments = await installmentRepository.findByPlanId(existingByCode.id);
+      return {
+        loan: this._formatLoan(existingByCode),
+        summary,
+        installments: existingInstallments.map((item) => this._formatInstallment(item)),
+        is_idempotent_replay: true,
+      };
+    }
+
+    // 2. Prevent rapid double-tap duplicate submissions within 15 seconds
+    const recentLoans = await loanRepository.findByCustomerId(customerId);
+    const fifteenSecondsAgo = new Date(Date.now() - 15000);
+    const recentDuplicate = recentLoans.find(
+      (l) =>
+        new Date(l.created_at) > fifteenSecondsAgo &&
+        Number(l.total_amount) === Number(summary.totalRepayment) &&
+        Number(l.total_installments) === Number(summary.totalInstallments) &&
+        l.start_date === summary.startDate
+    );
+    if (recentDuplicate) {
+      const existingInstallments = await installmentRepository.findByPlanId(recentDuplicate.id);
+      return {
+        loan: this._formatLoan(recentDuplicate),
+        summary,
+        installments: existingInstallments.map((item) => this._formatInstallment(item)),
+        is_idempotent_replay: true,
+      };
+    }
 
     // Store metadata inside notes column
     const metadata = {
@@ -108,42 +140,56 @@ class LoanService {
       notes: data.notes || '',
     };
 
-    // 1. Insert loan into payment_plans
-    const planRecord = await loanRepository.create({
-      plan_code: planCode,
-      customer_id: customerId,
-      title: loanTitle,
-      principal_amount: summary.principal,
-      interest_rate: summary.monthlyInterestRate,
-      total_amount: summary.totalRepayment,
-      down_payment: data.down_payment || 0,
-      total_installments: summary.totalInstallments,
-      frequency: summary.frequency,
-      start_date: summary.startDate,
-      end_date: summary.finalDueDate,
-      status: 'active',
-      notes: JSON.stringify(metadata),
-    });
+    let planRecord;
+    try {
+      // 3. Insert loan into payment_plans
+      planRecord = await loanRepository.create({
+        plan_code: planCode,
+        customer_id: customerId,
+        title: loanTitle,
+        principal_amount: summary.principal,
+        interest_rate: summary.monthlyInterestRate,
+        total_amount: summary.totalRepayment,
+        down_payment: data.down_payment || 0,
+        total_installments: summary.totalInstallments,
+        frequency: summary.frequency,
+        start_date: summary.startDate,
+        end_date: summary.finalDueDate,
+        status: 'active',
+        notes: JSON.stringify(metadata),
+      });
 
-    // 2. Prepare installments for bulk insert
-    const installmentRows = scheduled.installments.map((inst) => ({
-      plan_id: planRecord.id,
-      customer_id: customerId,
-      installment_number: inst.installment_number,
-      due_date: inst.due_date,
-      amount_due: inst.amount_due,
-      amount_paid: 0,
-      status: 'pending',
-    }));
+      // 4. Prepare installments for bulk insert
+      const installmentRows = scheduled.installments.map((inst) => ({
+        plan_id: planRecord.id,
+        customer_id: customerId,
+        installment_number: inst.installment_number,
+        due_date: inst.due_date,
+        amount_due: inst.amount_due,
+        amount_paid: 0,
+        status: 'pending',
+      }));
 
-    // 3. Insert installments
-    const savedInstallments = await installmentRepository.createMany(installmentRows);
+      // 5. Insert installments
+      const savedInstallments = await installmentRepository.createMany(installmentRows);
 
-    return {
-      loan: this._formatLoan(planRecord),
-      summary,
-      installments: savedInstallments.map((item) => this._formatInstallment(item)),
-    };
+      return {
+        loan: this._formatLoan(planRecord),
+        summary,
+        installments: savedInstallments.map((item) => this._formatInstallment(item)),
+      };
+    } catch (err) {
+      // Compensating rollback: delete orphaned loan if installment creation fails
+      if (planRecord && planRecord.id) {
+        try {
+          await loanRepository.delete(planRecord.id);
+          console.warn(`[Rollback] Orphaned loan ${planRecord.id} successfully rolled back.`);
+        } catch (cleanupErr) {
+          console.error(`[Rollback Error] Failed to delete orphaned loan ${planRecord.id}:`, cleanupErr.message);
+        }
+      }
+      throw err;
+    }
   }
 
   /**

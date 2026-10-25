@@ -24,6 +24,21 @@ function errorHandler(err, req, res, next) {
     error = AppError.badRequest('Malformed JSON in request body', null, 'INVALID_JSON');
   }
 
+  // Handle Supabase/PostgreSQL constraint violations
+  if (err && err.code === '23505') {
+    error = AppError.conflict(
+      'A record with these unique details already exists in the system.',
+      null,
+      'DUPLICATE_ENTRY'
+    );
+  } else if (err && err.code === '23503') {
+    error = AppError.badRequest(
+      'Referenced customer or record does not exist.',
+      null,
+      'FOREIGN_KEY_VIOLATION'
+    );
+  }
+
   // Fallback for unhandled non-AppError exceptions
   if (!(error instanceof AppError)) {
     const statusCode = error.statusCode || error.status || 500;

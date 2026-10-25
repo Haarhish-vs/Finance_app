@@ -35,6 +35,35 @@ class LoanRepository {
   }
 
   /**
+   * Find a loan by plan_code (used for idempotency)
+   */
+  async findByPlanCode(planCode) {
+    const supabase = getSupabaseClient();
+    const { data, error } = await supabase
+      .from('payment_plans')
+      .select('*, customers(id, full_name, phone, email, status)')
+      .eq('plan_code', planCode)
+      .maybeSingle();
+
+    if (error) throw error;
+    return data;
+  }
+
+  /**
+   * Delete a loan record (used for compensating rollback)
+   */
+  async delete(id) {
+    const supabase = getSupabaseClient();
+    const { error } = await supabase
+      .from('payment_plans')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
+    return true;
+  }
+
+  /**
    * Find a loan by UUID with customer and installments
    */
   async findById(id) {

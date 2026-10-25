@@ -136,11 +136,19 @@ class ApiClient {
         _baseUrl = candidate;
         return result;
       } on TimeoutException {
-        lastError = ApiException.timeout();
+        lastError = ApiException.timeout(
+          'Request timed out. The server may be waking up; please retry in a moment.',
+        );
       } on SocketException catch (e) {
-        lastError = ApiException.networkError(e.message);
+        debugPrint('[ApiClient SocketException] ${e.message} (OS Error: ${e.osError})');
+        lastError = ApiException.networkError(
+          'Unable to connect to server. Please check your internet connection.',
+        );
       } on http.ClientException catch (e) {
-        lastError = ApiException.networkError(e.message);
+        debugPrint('[ApiClient ClientException] ${e.message}');
+        lastError = ApiException.networkError(
+          'Network connection interrupted. Please try again.',
+        );
       } catch (e) {
         if (e is ApiException) {
           _activeBaseUrl = candidate;
