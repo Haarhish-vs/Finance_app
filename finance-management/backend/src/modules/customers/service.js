@@ -321,6 +321,24 @@ class CustomerService {
     const updated = await customerRepository.updateStatus(id, status);
     return this._decodeCustomer(updated);
   }
+
+  /**
+   * Delete customer and cascade delete dependent records from database
+   */
+  async deleteCustomer(id) {
+    this._validateId(id);
+    const existing = await customerRepository.findById(id);
+    if (!existing) {
+      throw AppError.notFound(`Customer not found with ID ${id}`, 'CUSTOMER_NOT_FOUND');
+    }
+
+    await customerRepository.delete(id);
+    return {
+      id: existing.id,
+      full_name: existing.full_name,
+      deleted: true,
+    };
+  }
 }
 
 module.exports = new CustomerService();

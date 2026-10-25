@@ -183,8 +183,70 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
           _fetchCustomer();
           _fetchCustomerLoans();
         },
+        onDeleted: () {
+          Navigator.of(context).pop(true);
+        },
       ),
     );
+  }
+
+  Future<void> _confirmDeleteCustomer() async {
+    if (_customer == null) return;
+
+    final customerName = _customer!.fullName;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        icon: const Icon(Icons.delete_forever_rounded, color: AppColors.error, size: 40.0),
+        title: const Text('Delete Customer?'),
+        content: Text(
+          'Are you sure you want to permanently delete "$customerName" from the database?\n\n'
+          'This will permanently delete this customer and all associated loan plans, installments, and payment records. This action cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton.icon(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.error,
+              foregroundColor: Colors.white,
+            ),
+            icon: const Icon(Icons.delete_rounded, size: 16.0),
+            label: const Text('Delete Permanently'),
+            onPressed: () => Navigator.of(ctx).pop(true),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && mounted) {
+      setState(() => _isLoading = true);
+
+      try {
+        await _repository.deleteCustomer(_customer!.id);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              backgroundColor: AppColors.success,
+              content: Text('Customer "$customerName" deleted successfully from database.'),
+            ),
+          );
+          Navigator.of(context).pop(true);
+        }
+      } catch (e) {
+        if (mounted) {
+          setState(() => _isLoading = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              backgroundColor: AppColors.error,
+              content: Text('Failed to delete customer: $e'),
+            ),
+          );
+        }
+      }
+    }
   }
 
   void _openOriginateLoanDialog() {
@@ -218,6 +280,11 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
               icon: const Icon(Icons.edit_outlined),
               tooltip: 'Edit Profile',
               onPressed: _openEditDialog,
+            ),
+            IconButton(
+              icon: const Icon(Icons.delete_outline_rounded, color: AppColors.error),
+              tooltip: 'Delete Customer',
+              onPressed: _confirmDeleteCustomer,
             ),
             IconButton(
               icon: const Icon(Icons.refresh_rounded),

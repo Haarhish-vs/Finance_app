@@ -70,6 +70,19 @@ class CustomerController {
       next(err);
     }
   };
+
+  /**
+   * DELETE /api/v1/customers/:id
+   */
+  deleteCustomer = async (req, res, next) => {
+    try {
+      const { id } = req.params;
+      const result = await customerService.deleteCustomer(id);
+      return sendSuccess(res, result, 200, 'Customer deleted successfully');
+    } catch (err) {
+      next(err);
+    }
+  };
 }
 
 module.exports = new CustomerController();

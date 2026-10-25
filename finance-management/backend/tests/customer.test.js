@@ -113,6 +113,18 @@ async function runTests() {
     if (notFound.status !== 404) throw new Error('Expected 404 on nonexistent customer');
     console.log('✔ GET /customers/:id returned 404 for nonexistent UUID');
 
+    // 10. Delete customer
+    const delRes = await request('DELETE', '/customers/' + customerId);
+    if (delRes.status !== 200 || delRes.body.success !== true) {
+      throw new Error('Failed to delete customer');
+    }
+    console.log('✔ DELETE /customers/:id deleted customer from database (200)');
+
+    // 11. Verify customer is gone
+    const checkDeleted = await request('GET', '/customers/' + customerId);
+    if (checkDeleted.status !== 404) throw new Error('Customer should be 404 after deletion');
+    console.log('✔ GET /customers/:id confirmed customer no longer exists in database (404)');
+
     console.log('\nAll customer backend automated tests passed!');
   } catch (err) {
     console.error('Test execution failed:', err);

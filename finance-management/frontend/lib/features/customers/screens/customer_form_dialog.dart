@@ -18,12 +18,14 @@ class CustomerFormDialog extends StatefulWidget {
   final CustomerModel? initialCustomer;
   final bool isEditOnly;
   final VoidCallback onSaved;
+  final VoidCallback? onDeleted;
 
   const CustomerFormDialog({
     super.key,
     this.initialCustomer,
     this.isEditOnly = false,
     required this.onSaved,
+    this.onDeleted,
   });
 
   @override
@@ -416,6 +418,68 @@ class _CustomerFormDialogState extends State<CustomerFormDialog> {
     }
   }
 
+  /// Confirm and permanently delete customer from database
+  Future<void> _confirmDeleteCustomer() async {
+    if (widget.initialCustomer == null || _isSubmitting) return;
+
+    final customerName = widget.initialCustomer!.fullName;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        icon: const Icon(Icons.delete_forever_rounded, color: AppColors.error, size: 40.0),
+        title: const Text('Delete Customer?'),
+        content: Text(
+          'Are you sure you want to permanently delete "$customerName" from the database?\n\n'
+          'This will permanently delete this customer and all associated loan plans, installments, and payment records. This action cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton.icon(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.error,
+              foregroundColor: Colors.white,
+            ),
+            icon: const Icon(Icons.delete_rounded, size: 16.0),
+            label: const Text('Delete Permanently'),
+            onPressed: () => Navigator.of(ctx).pop(true),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && mounted) {
+      setState(() {
+        _isSubmitting = true;
+        _errorMessage = null;
+      });
+
+      try {
+        await _customerRepository.deleteCustomer(widget.initialCustomer!.id);
+        if (mounted) {
+          Navigator.of(context).pop();
+          widget.onDeleted?.call();
+          widget.onSaved();
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              backgroundColor: AppColors.success,
+              content: Text('Customer "$customerName" deleted successfully from database.'),
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          setState(() {
+            _errorMessage = 'Failed to delete customer: $e';
+            _isSubmitting = false;
+          });
+        }
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
@@ -595,6 +659,19 @@ class _CustomerFormDialogState extends State<CustomerFormDialog> {
               hint: 'optional',
               maxLines: 2,
               prefixIcon: const Icon(Icons.notes_rounded),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            const Divider(),
+            const SizedBox(height: AppSpacing.sm),
+            OutlinedButton.icon(
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppColors.error,
+                side: const BorderSide(color: AppColors.error),
+                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+              ),
+              icon: const Icon(Icons.delete_forever_rounded, size: 20.0),
+              label: const Text('Delete Customer from Database'),
+              onPressed: _isSubmitting ? null : _confirmDeleteCustomer,
             ),
           ],
         ),
@@ -1397,6 +1474,12 @@ class _CustomerFormDialogState extends State<CustomerFormDialog> {
     if (_isCustomerEditOnly) {
       return Row(
         children: [
+          IconButton(
+            icon: const Icon(Icons.delete_outline_rounded, color: AppColors.error),
+            tooltip: 'Delete Customer',
+            onPressed: _isSubmitting ? null : _confirmDeleteCustomer,
+          ),
+          const SizedBox(width: AppSpacing.xs),
           TextButton(
             onPressed: _isSubmitting ? null : () => Navigator.of(context).pop(),
             child: const Text('Cancel'),

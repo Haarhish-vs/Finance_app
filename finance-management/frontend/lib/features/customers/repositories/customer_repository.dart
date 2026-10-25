@@ -72,4 +72,9 @@ class CustomerRepository {
     }
     throw Exception('Failed to update customer status');
   }
+
+  /// Permanently delete customer from database
+  Future<void> deleteCustomer(String id) async {
+    await _apiClient.delete('/customers/$id');
+  }
 }

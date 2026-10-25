@@ -78,4 +78,15 @@ router.get(
   loanController.getLoansByCustomerId
 );
 
+// DELETE /api/v1/customers/:id - Delete customer and cascade delete dependent records
+router.delete(
+  '/:id',
+  validateRequest({
+    params: {
+      id: { type: 'uuid', required: true, message: 'Invalid customer ID format' },
+    },
+  }),
+  customerController.deleteCustomer
+);
+
 module.exports = router;

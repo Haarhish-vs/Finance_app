@@ -107,6 +107,29 @@ class CustomerRepository {
     if (error) throw error;
     return data;
   }
+
+  /**
+   * Delete customer and dependent payment plans, installments, and payments
+   */
+  async delete(id) {
+    const supabase = getSupabaseClient();
+    // 1. Delete associated payments
+    await supabase.from('payments').delete().eq('customer_id', id);
+    // 2. Delete associated installments
+    await supabase.from('installments').delete().eq('customer_id', id);
+    // 3. Delete associated loans/plans
+    await supabase.from('payment_plans').delete().eq('customer_id', id);
+    // 4. Delete the customer
+    const { data, error } = await supabase
+      .from('customers')
+      .delete()
+      .eq('id', id)
+      .select()
+      .maybeSingle();
+
+    if (error) throw error;
+    return data;
+  }
 }
 
 module.exports = new CustomerRepository();
