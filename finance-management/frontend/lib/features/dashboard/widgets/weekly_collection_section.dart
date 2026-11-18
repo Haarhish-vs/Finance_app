@@ -29,7 +29,6 @@ class _WeeklyCollectionSectionState extends State<WeeklyCollectionSection> {
   @override
   void initState() {
     super.initState();
-    // Default selected weekday to today's weekday
     final now = DateTime.now();
     _selectedWeekday = _getWeekdayName(now.weekday);
     _loadWeeklyCollections();
@@ -121,49 +120,56 @@ class _WeeklyCollectionSectionState extends State<WeeklyCollectionSection> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Card(
-      color: AppColors.surfaceLight,
-      elevation: 1.0,
-      shape: RoundedRectangleBorder(
-        borderRadius: AppSpacing.roundedMd,
-        side: const BorderSide(color: AppColors.borderLight),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.md),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header: Title & Week Controls
-            _buildHeader(theme),
-            const SizedBox(height: AppSpacing.md),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isMobile = constraints.maxWidth < 600;
+        final cardPadding = isMobile ? 12.0 : 16.0;
 
-            // Main Content
-            if (_isLoading)
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 36.0),
-                child: Center(
-                  child: AppLoadingIndicator(
-                    message: 'Loading weekly collection overview...',
-                  ),
-                ),
-              )
-            else if (_errorMessage != null)
-              _buildErrorView()
-            else if (_data != null) ...[
-              // Week Summary Bar
-              _buildWeekSummaryBar(theme),
-              const SizedBox(height: AppSpacing.md),
+        return Card(
+          color: AppColors.surfaceLight,
+          elevation: 1.0,
+          shape: RoundedRectangleBorder(
+            borderRadius: AppSpacing.roundedMd,
+            side: const BorderSide(color: AppColors.borderLight),
+          ),
+          child: Padding(
+            padding: EdgeInsets.all(cardPadding),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header: Title & Week Controls
+                _buildHeader(theme),
+                const SizedBox(height: 12.0),
 
-              // Weekday Cards Selector (Monday — 12 customers, Tuesday — 8 customers...)
-              _buildWeekdaySelectorRow(theme),
-              const SizedBox(height: AppSpacing.md),
+                // Main Content
+                if (_isLoading)
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 36.0),
+                    child: Center(
+                      child: AppLoadingIndicator(
+                        message: 'Loading weekly collection overview...',
+                      ),
+                    ),
+                  )
+                else if (_errorMessage != null)
+                  _buildErrorView()
+                else if (_data != null) ...[
+                  // Week Summary Bar (Responsive KPI tiles)
+                  _buildWeekSummaryBar(theme),
+                  const SizedBox(height: 14.0),
 
-              // Selected Weekday Installment List
-              _buildSelectedDayDetail(theme),
-            ],
-          ],
-        ),
-      ),
+                  // Weekday Cards Selector (Monday — 12 customers, Tuesday — 8 customers...)
+                  _buildWeekdaySelectorRow(theme),
+                  const SizedBox(height: 14.0),
+
+                  // Selected Weekday Installment List
+                  _buildSelectedDayDetail(theme),
+                ],
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -199,7 +205,7 @@ class _WeeklyCollectionSectionState extends State<WeeklyCollectionSection> {
                     ),
                   ),
                   Text(
-                    'Grouped by weekday for scheduled microfinance installments',
+                    'Grouped by weekday for scheduled installments',
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: AppColors.textSecondaryLight,
                       fontSize: 11.5,
@@ -223,6 +229,7 @@ class _WeeklyCollectionSectionState extends State<WeeklyCollectionSection> {
                 style: IconButton.styleFrom(
                   backgroundColor: AppColors.backgroundLight,
                   padding: const EdgeInsets.all(6.0),
+                  minimumSize: const Size(34, 34),
                 ),
               ),
               const SizedBox(width: 4.0),
@@ -252,6 +259,7 @@ class _WeeklyCollectionSectionState extends State<WeeklyCollectionSection> {
                 style: IconButton.styleFrom(
                   backgroundColor: AppColors.backgroundLight,
                   padding: const EdgeInsets.all(6.0),
+                  minimumSize: const Size(34, 34),
                 ),
               ),
               const SizedBox(width: 6.0),
@@ -291,77 +299,142 @@ class _WeeklyCollectionSectionState extends State<WeeklyCollectionSection> {
   }
 
   Widget _buildWeekSummaryBar(ThemeData theme) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
-      decoration: BoxDecoration(
-        color: AppColors.backgroundLight,
-        borderRadius: AppSpacing.roundedSm,
-        border: Border.all(color: AppColors.borderLight),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          _buildSummaryStat(
-            'Total Due Customers',
-            '${_data!.totalWeeklyCustomers}',
-            Icons.people_alt_outlined,
-            AppColors.primary,
-          ),
-          const SizedBox(
-            height: 28.0,
-            child: VerticalDivider(color: AppColors.borderLight),
-          ),
-          _buildSummaryStat(
-            'Total Scheduled',
-            CurrencyFormatter.format(_data!.totalWeeklyAmountDue),
-            Icons.payments_outlined,
-            AppColors.primaryDark,
-          ),
-          const SizedBox(
-            height: 28.0,
-            child: VerticalDivider(color: AppColors.borderLight),
-          ),
-          _buildSummaryStat(
-            'Total Collected',
-            CurrencyFormatter.format(_data!.totalWeeklyCollected),
-            Icons.check_circle_outline_rounded,
-            AppColors.success,
-          ),
-        ],
-      ),
-    );
-  }
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isNarrow = constraints.maxWidth < 460;
 
-  Widget _buildSummaryStat(String label, String value, IconData icon, Color color) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, size: 16.0, color: color),
-        const SizedBox(width: 6.0),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              label,
-              style: const TextStyle(fontSize: 11.0, color: AppColors.textSecondaryLight),
+        Widget buildTile(String label, String value, IconData icon, Color color, Color bgColor) {
+          return Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 8.0),
+            decoration: BoxDecoration(
+              color: bgColor,
+              borderRadius: BorderRadius.circular(8.0),
+              border: Border.all(color: color.withValues(alpha: 0.15)),
             ),
-            Text(
-              value,
-              style: TextStyle(
-                fontSize: 13.0,
-                fontWeight: FontWeight.bold,
-                color: color,
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(6.0),
+                  decoration: BoxDecoration(
+                    color: color.withValues(alpha: 0.12),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(icon, size: 15.0, color: color),
+                ),
+                const SizedBox(width: 8.0),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        label,
+                        style: const TextStyle(
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w500,
+                          color: AppColors.textSecondaryLight,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 1.0),
+                      Text(
+                        value,
+                        style: TextStyle(
+                          fontSize: 13.0,
+                          fontWeight: FontWeight.bold,
+                          color: color,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
+
+        if (isNarrow) {
+          return Column(
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: buildTile(
+                      'Due Customers',
+                      '${_data!.totalWeeklyCustomers}',
+                      Icons.people_alt_outlined,
+                      AppColors.primary,
+                      AppColors.primaryContainer.withValues(alpha: 0.25),
+                    ),
+                  ),
+                  const SizedBox(width: 8.0),
+                  Expanded(
+                    child: buildTile(
+                      'Total Collected',
+                      CurrencyFormatter.format(_data!.totalWeeklyCollected),
+                      Icons.check_circle_outline_rounded,
+                      AppColors.success,
+                      AppColors.successContainer.withValues(alpha: 0.25),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 6.0),
+              buildTile(
+                'Total Scheduled for Week',
+                CurrencyFormatter.format(_data!.totalWeeklyAmountDue),
+                Icons.payments_outlined,
+                AppColors.primaryDark,
+                AppColors.backgroundLight,
+              ),
+            ],
+          );
+        }
+
+        return Row(
+          children: [
+            Expanded(
+              child: buildTile(
+                'Due Customers',
+                '${_data!.totalWeeklyCustomers}',
+                Icons.people_alt_outlined,
+                AppColors.primary,
+                AppColors.primaryContainer.withValues(alpha: 0.25),
+              ),
+            ),
+            const SizedBox(width: 8.0),
+            Expanded(
+              child: buildTile(
+                'Total Scheduled',
+                CurrencyFormatter.format(_data!.totalWeeklyAmountDue),
+                Icons.payments_outlined,
+                AppColors.primaryDark,
+                AppColors.backgroundLight,
+              ),
+            ),
+            const SizedBox(width: 8.0),
+            Expanded(
+              child: buildTile(
+                'Total Collected',
+                CurrencyFormatter.format(_data!.totalWeeklyCollected),
+                Icons.check_circle_outline_rounded,
+                AppColors.success,
+                AppColors.successContainer.withValues(alpha: 0.25),
               ),
             ),
           ],
-        ),
-      ],
+        );
+      },
     );
   }
 
   Widget _buildWeekdaySelectorRow(ThemeData theme) {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
+      physics: const BouncingScrollPhysics(),
       child: Row(
         children: _data!.weekdays.map((group) {
           final isSelected = _selectedWeekday == group.weekday;
@@ -378,7 +451,7 @@ class _WeeklyCollectionSectionState extends State<WeeklyCollectionSection> {
               },
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 180),
-                width: 136.0,
+                width: 128.0,
                 padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 10.0),
                 decoration: BoxDecoration(
                   color: isSelected
@@ -391,7 +464,7 @@ class _WeeklyCollectionSectionState extends State<WeeklyCollectionSection> {
                     color: isSelected
                         ? AppColors.primary
                         : (hasCustomers
-                            ? AppColors.primary.withValues(alpha: 0.3)
+                            ? AppColors.primary.withValues(alpha: 0.35)
                             : AppColors.borderLight),
                     width: isSelected ? 1.8 : 1.0,
                   ),
@@ -438,14 +511,14 @@ class _WeeklyCollectionSectionState extends State<WeeklyCollectionSection> {
                         color: isSelected
                             ? Colors.white.withValues(alpha: 0.2)
                             : (hasCustomers
-                                ? AppColors.primary.withValues(alpha: 0.1)
+                                ? AppColors.primary.withValues(alpha: 0.12)
                                 : Colors.grey.withValues(alpha: 0.1)),
                         borderRadius: BorderRadius.circular(4.0),
                       ),
                       child: Text(
-                        '${group.customerCount} customers',
+                        '${group.customerCount} ${group.customerCount == 1 ? "customer" : "customers"}',
                         style: TextStyle(
-                          fontSize: 11.0,
+                          fontSize: 10.5,
                           fontWeight: FontWeight.w600,
                           color: isSelected
                               ? Colors.white
@@ -453,11 +526,11 @@ class _WeeklyCollectionSectionState extends State<WeeklyCollectionSection> {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 4.0),
+                    const SizedBox(height: 5.0),
                     Text(
                       CurrencyFormatter.format(group.totalDue),
                       style: TextStyle(
-                        fontSize: 11.5,
+                        fontSize: 12.0,
                         fontWeight: FontWeight.bold,
                         color: isSelected ? Colors.white : AppColors.textPrimaryLight,
                       ),
@@ -488,43 +561,90 @@ class _WeeklyCollectionSectionState extends State<WeeklyCollectionSection> {
     );
 
     return Container(
-      padding: const EdgeInsets.all(AppSpacing.md),
+      padding: const EdgeInsets.all(12.0),
       decoration: BoxDecoration(
         color: AppColors.backgroundLight,
-        borderRadius: AppSpacing.roundedSm,
+        borderRadius: BorderRadius.circular(10.0),
         border: Border.all(color: AppColors.borderLight),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Section Sub-header
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
+          // Section Sub-header with responsive layout
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final isNarrow = constraints.maxWidth < 400;
+
+              final titlePart = Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   const Icon(Icons.event_available_rounded, size: 18.0, color: AppColors.primary),
-                  const SizedBox(width: AppSpacing.xs),
+                  const SizedBox(width: 6.0),
                   Text(
-                    '${group.weekday} Collections (${group.customerCount} customers)',
+                    '${group.weekday} Collections',
                     style: theme.textTheme.titleSmall?.copyWith(
                       fontWeight: FontWeight.bold,
                       color: AppColors.textPrimaryLight,
                     ),
                   ),
+                  const SizedBox(width: 6.0),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6.0, vertical: 2.0),
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryContainer,
+                      borderRadius: BorderRadius.circular(4.0),
+                    ),
+                    child: Text(
+                      '${group.customerCount}',
+                      style: const TextStyle(
+                        fontSize: 11.0,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                  ),
                 ],
-              ),
-              Text(
-                'Total Due: ${CurrencyFormatter.format(group.totalDue)}',
-                style: const TextStyle(
-                  fontSize: 12.5,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.primary,
+              );
+
+              final totalDueBadge = Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(6.0),
+                  border: Border.all(color: AppColors.primary.withValues(alpha: 0.2)),
                 ),
-              ),
-            ],
+                child: Text(
+                  'Total Due: ${CurrencyFormatter.format(group.totalDue)}',
+                  style: const TextStyle(
+                    fontSize: 12.0,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.primary,
+                  ),
+                ),
+              );
+
+              if (isNarrow) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    titlePart,
+                    const SizedBox(height: 6.0),
+                    totalDueBadge,
+                  ],
+                );
+              }
+
+              return Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(child: titlePart),
+                  const SizedBox(width: 8.0),
+                  totalDueBadge,
+                ],
+              );
+            },
           ),
-          const SizedBox(height: AppSpacing.sm),
+          const SizedBox(height: 10.0),
 
           if (group.items.isEmpty)
             Padding(
@@ -565,122 +685,204 @@ class _WeeklyCollectionSectionState extends State<WeeklyCollectionSection> {
   }
 
   Widget _buildCustomerDueCard(WeeklyDueItem item) {
-    return Card(
-      color: AppColors.surfaceLight,
-      elevation: 0.5,
-      shape: RoundedRectangleBorder(
-        borderRadius: AppSpacing.roundedSm,
-        side: const BorderSide(color: AppColors.borderLight),
+    String formattedDueDate;
+    try {
+      final dt = DateTime.parse(item.dueDate);
+      formattedDueDate = DateFormat('dd MMM yyyy').format(dt);
+    } catch (_) {
+      formattedDueDate = item.dueDate;
+    }
+
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surfaceLight,
+        borderRadius: BorderRadius.circular(10.0),
+        border: Border.all(color: AppColors.borderLight),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 4.0,
+            offset: const Offset(0, 1),
+          ),
+        ],
       ),
       child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.sm + 2.0),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
+        padding: const EdgeInsets.all(12.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Borrower Avatar
-            CircleAvatar(
-              radius: 18.0,
-              backgroundColor: AppColors.primaryContainer,
-              child: Text(
-                item.customerName.isNotEmpty ? item.customerName[0].toUpperCase() : 'B',
-                style: const TextStyle(
-                  color: AppColors.primary,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 13.0,
-                ),
-              ),
-            ),
-            const SizedBox(width: AppSpacing.sm),
-
-            // Customer Name & Phone
-            Expanded(
-              flex: 3,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    item.customerName,
+            // Row 1: Avatar, Customer Name & Phone on Left, Status Badge on Right
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                // Avatar
+                CircleAvatar(
+                  radius: 18.0,
+                  backgroundColor: AppColors.primaryContainer,
+                  child: Text(
+                    item.customerName.isNotEmpty ? item.customerName[0].toUpperCase() : 'C',
                     style: const TextStyle(
+                      color: AppColors.primary,
                       fontWeight: FontWeight.bold,
                       fontSize: 13.5,
-                      color: AppColors.textPrimaryLight,
                     ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: 2.0),
-                  Row(
+                ),
+                const SizedBox(width: 10.0),
+
+                // Name & Contact
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Icon(Icons.phone_outlined, size: 12.0, color: AppColors.textSecondaryLight),
-                      const SizedBox(width: 3.0),
                       Text(
-                        item.phoneNumber,
-                        style: const TextStyle(fontSize: 11.5, color: AppColors.textSecondaryLight),
-                      ),
-                      if (item.planCode.isNotEmpty) ...[
-                        const SizedBox(width: 6.0),
-                        Text(
-                          '• ${item.planCode}',
-                          style: const TextStyle(fontSize: 11.0, color: AppColors.textMutedLight),
+                        item.customerName,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14.5,
+                          color: AppColors.textPrimaryLight,
                         ),
-                      ],
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 2.0),
+                      Row(
+                        children: [
+                          const Icon(Icons.phone_outlined, size: 12.0, color: AppColors.textSecondaryLight),
+                          const SizedBox(width: 3.0),
+                          Text(
+                            item.phoneNumber,
+                            style: const TextStyle(
+                              fontSize: 11.5,
+                              color: AppColors.textSecondaryLight,
+                            ),
+                          ),
+                          if (item.planCode.isNotEmpty) ...[
+                            const SizedBox(width: 6.0),
+                            Flexible(
+                              child: Text(
+                                '• ${item.planCode}',
+                                style: const TextStyle(
+                                  fontSize: 11.0,
+                                  color: AppColors.textMutedLight,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
                     ],
                   ),
-                ],
-              ),
+                ),
+                const SizedBox(width: 8.0),
+
+                // Status Badge
+                _buildStatusBadge(item.status),
+              ],
             ),
 
-            // Due Date & Installment Number
-            Expanded(
-              flex: 2,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Due: ${item.dueDate}',
-                    style: const TextStyle(
-                      fontSize: 11.5,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textPrimaryLight,
-                    ),
-                  ),
-                  Text(
-                    'Week #${item.installmentNumber}',
-                    style: const TextStyle(fontSize: 10.5, color: AppColors.textMutedLight),
-                  ),
-                ],
-              ),
-            ),
+            const SizedBox(height: 10.0),
+            const Divider(height: 1.0, color: AppColors.borderLight),
+            const SizedBox(height: 10.0),
 
-            // Amount Due & Outstanding Balance
-            Expanded(
-              flex: 2,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(
-                    CurrencyFormatter.format(item.installmentAmount),
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 13.5,
-                      color: AppColors.primary,
-                    ),
+            // Row 2: Due Date & Week on Left, Installment Due & Outstanding Balance on Right
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                // Left Column: Due date & week
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.calendar_today_outlined, size: 12.0, color: AppColors.textSecondaryLight),
+                          const SizedBox(width: 4.0),
+                          Text(
+                            'Due: $formattedDueDate',
+                            style: const TextStyle(
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textPrimaryLight,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 3.0),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6.0, vertical: 1.5),
+                        decoration: BoxDecoration(
+                          color: AppColors.backgroundLight,
+                          borderRadius: BorderRadius.circular(4.0),
+                          border: Border.all(color: AppColors.borderLight),
+                        ),
+                        child: Text(
+                          'Week #${item.installmentNumber}',
+                          style: const TextStyle(
+                            fontSize: 10.5,
+                            fontWeight: FontWeight.w500,
+                            color: AppColors.textMutedLight,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                  Text(
-                    'Bal: ${CurrencyFormatter.format(item.outstandingBalance)}',
-                    style: TextStyle(
-                      fontSize: 11.0,
-                      fontWeight: FontWeight.w600,
-                      color: item.outstandingBalance > 0 ? AppColors.error : AppColors.success,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: AppSpacing.sm),
+                ),
 
-            // Status Badge (Paid / Pending / Overdue)
-            _buildStatusBadge(item.status),
+                const SizedBox(width: 8.0),
+
+                // Right Column: Weekly Installment Amount & Outstanding Balance
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Text(
+                          'Due: ',
+                          style: TextStyle(
+                            fontSize: 11.0,
+                            color: AppColors.textSecondaryLight,
+                          ),
+                        ),
+                        Text(
+                          CurrencyFormatter.format(item.installmentAmount),
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14.5,
+                            color: AppColors.primary,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 2.0),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Text(
+                          'Bal: ',
+                          style: TextStyle(
+                            fontSize: 10.5,
+                            color: AppColors.textSecondaryLight,
+                          ),
+                        ),
+                        Text(
+                          CurrencyFormatter.format(item.outstandingBalance),
+                          style: TextStyle(
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.bold,
+                            color: item.outstandingBalance > 0 ? AppColors.error : AppColors.success,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ],
         ),
       ),
