@@ -1,9 +1,10 @@
 const env = require('./config/env');
 const app = require('./app');
+const authService = require('./modules/auth/service');
 
 const PORT = env.PORT;
 
-const server = app.listen(PORT, () => {
+const server = app.listen(PORT, async () => {
   const hasUrl = Boolean(env.SUPABASE_URL);
   const hasKey = Boolean(env.SUPABASE_SECRET_KEY);
 
@@ -11,6 +12,9 @@ const server = app.listen(PORT, () => {
   console.log(`[Supabase Config] URL present: ${hasUrl}, Secret Key present: ${hasKey}`);
   console.log(`[Health Checks] GET http://localhost:${PORT}/api/v1/health`);
   console.log(`[DB Health]     GET http://localhost:${PORT}/api/v1/health/db`);
+
+  // Seed the initial admin account using environment variables
+  await authService.seedInitialAdmin();
 });
 
 // Graceful shutdown handling

@@ -483,7 +483,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                       ),
                       title: Text(loan.title, style: const TextStyle(fontWeight: FontWeight.bold)),
                       subtitle: Text(
-                        '${loan.planCode} • ${CurrencyFormatter.format(loan.totalAmount)} • ${loan.frequency.toUpperCase()}',
+                        '${loan.planCode} • ${CurrencyFormatter.format(loan.totalAmount)} • ${loan.frequency.toUpperCase()}${loan.isWeekly && loan.paymentDay != null ? ' (${loan.paymentDay})' : ''}',
                         style: const TextStyle(fontSize: 12.0),
                       ),
                       trailing: Column(

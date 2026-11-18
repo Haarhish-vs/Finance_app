@@ -1,5 +1,7 @@
 const http = require('http');
+const jwt = require('jsonwebtoken');
 const app = require('../src/app');
+const env = require('../src/config/env');
 const loanCalculator = require('../src/utils/loan-calculator');
 
 async function runLoanTests() {
@@ -73,6 +75,7 @@ async function runLoanTests() {
   console.log('\n2. Testing HTTP Endpoints against Live Express App...');
   const PORT = 5022;
   const server = app.listen(PORT);
+  const token = jwt.sign({ id: 'test-admin', email: 'ashokfinapp', role: 'admin' }, env.JWT_SECRET);
 
   function request(method, path, data = null) {
     return new Promise((resolve, reject) => {
@@ -84,6 +87,7 @@ async function runLoanTests() {
         method,
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
           ...(payload ? { 'Content-Length': Buffer.byteLength(payload) } : {})
         }
       }, res => {

@@ -16,6 +16,7 @@ class LoanModel {
   final double downPayment;
   final int totalInstallments;
   final String frequency;
+  final String? paymentDay;
   final String startDate;
   final String? endDate;
   final String status;
@@ -46,6 +47,7 @@ class LoanModel {
     this.downPayment = 0.0,
     required this.totalInstallments,
     required this.frequency,
+    this.paymentDay,
     required this.startDate,
     this.endDate,
     required this.status,
@@ -89,6 +91,7 @@ class LoanModel {
       downPayment: (json['down_payment'] as num?)?.toDouble() ?? 0.0,
       totalInstallments: (json['total_installments'] as num?)?.toInt() ?? 1,
       frequency: (json['frequency'] as String? ?? 'monthly').toLowerCase(),
+      paymentDay: json['payment_day'] as String? ?? json['paymentDay'] as String?,
       startDate: json['start_date'] as String? ?? '',
       endDate: json['end_date'] as String?,
       status: json['status'] as String? ?? 'active',

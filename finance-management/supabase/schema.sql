@@ -29,6 +29,7 @@ CREATE TABLE IF NOT EXISTS public.payment_plans (
     interest_rate NUMERIC DEFAULT 0,
     total_installments INTEGER,
     frequency VARCHAR(20) DEFAULT 'monthly',
+    payment_day VARCHAR(20),
     start_date DATE,
     end_date DATE,
     status VARCHAR(20) DEFAULT 'active',
@@ -65,4 +66,14 @@ CREATE TABLE IF NOT EXISTS public.payments (
     notes TEXT,
     receipt_url TEXT,
     created_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- 5. Admins Table
+CREATE TABLE IF NOT EXISTS public.admins (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    email VARCHAR(100) UNIQUE NOT NULL,
+    password_hash TEXT NOT NULL,
+    role VARCHAR(50) DEFAULT 'admin',
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now()
 );

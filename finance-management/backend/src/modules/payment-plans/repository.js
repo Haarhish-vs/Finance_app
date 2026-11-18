@@ -9,28 +9,46 @@ class LoanRepository {
    */
   async create(data) {
     const supabase = getSupabaseClient();
-    const { data: created, error } = await supabase
+    const payload = {
+      plan_code: data.plan_code,
+      customer_id: data.customer_id,
+      title: data.title || 'Personal Loan',
+      interest_rate: data.interest_rate,
+      total_amount: data.total_amount,
+      down_payment: data.down_payment || 0,
+      total_installments: data.total_installments,
+      frequency: data.frequency || 'monthly',
+      start_date: data.start_date,
+      end_date: data.end_date,
+      status: data.status || 'active',
+      notes: data.notes || null,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+
+    if (data.payment_day) {
+      payload.payment_day = data.payment_day;
+    }
+
+    let { data: created, error } = await supabase
       .from('payment_plans')
-      .insert({
-        plan_code: data.plan_code,
-        customer_id: data.customer_id,
-        title: data.title || 'Personal Loan',
-        interest_rate: data.interest_rate,
-        total_amount: data.total_amount,
-        down_payment: data.down_payment || 0,
-        total_installments: data.total_installments,
-        frequency: data.frequency || 'monthly',
-        start_date: data.start_date,
-        end_date: data.end_date,
-        status: data.status || 'active',
-        notes: data.notes || null,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      })
+      .insert(payload)
       .select('*, customers(id, full_name, phone, email, status)')
       .single();
 
-    if (error) throw error;
+    if (error && (error.code === '42703' || error.code === 'PGRST204' || error.message?.includes('payment_day'))) {
+      delete payload.payment_day;
+      const res = await supabase
+        .from('payment_plans')
+        .insert(payload)
+        .select('*, customers(id, full_name, phone, email, status)')
+        .single();
+      if (res.error) throw res.error;
+      created = res.data;
+    } else if (error) {
+      throw error;
+    }
+
     return created;
   }
 

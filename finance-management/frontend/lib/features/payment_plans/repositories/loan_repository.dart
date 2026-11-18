@@ -85,6 +85,7 @@ class LoanRepository {
     required int totalInstallments,
     required String startDate,
     required String firstDueDate,
+    String? paymentDay,
     List<Map<String, dynamic>>? customInstallments,
   }) async {
     final response = await _client.post(
@@ -93,6 +94,7 @@ class LoanRepository {
         'principal': principal,
         'interest_rate': interestRate,
         'frequency': frequency,
+        if (paymentDay != null && paymentDay.isNotEmpty) 'payment_day': paymentDay,
         'total_installments': totalInstallments,
         'start_date': startDate,
         'first_due_date': firstDueDate,

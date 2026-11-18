@@ -18,6 +18,16 @@ class ApiClient {
   /// Cached working base URL across API client instances
   static String? _activeBaseUrl;
 
+  /// Cached authentication token applied to all requests
+  static String? authToken;
+
+  /// Global callback triggered on 401 Unauthorized responses
+  static VoidCallback? onUnauthorized;
+
+  static void setAuthToken(String? token) {
+    authToken = token;
+  }
+
   ApiClient({
     http.Client? client,
     String? baseUrl,
@@ -33,6 +43,8 @@ class ApiClient {
   Map<String, String> get _defaultHeaders => {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
+        if (authToken != null && authToken!.isNotEmpty)
+          'Authorization': 'Bearer $authToken',
       };
 
   Uri _buildUri(String baseUrl, String endpoint, [Map<String, dynamic>? queryParameters]) {
@@ -178,6 +190,10 @@ class ApiClient {
 
     if (response.statusCode >= 200 && response.statusCode < 300) {
       return parsedBody;
+    }
+
+    if (response.statusCode == 401) {
+      onUnauthorized?.call();
     }
 
     debugPrint(

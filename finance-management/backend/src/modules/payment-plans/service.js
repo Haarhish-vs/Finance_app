@@ -33,6 +33,8 @@ class LoanService {
       ]);
     }
 
+    const paymentDay = frequency === 'weekly' ? (data.payment_day || data.paymentDay || null) : null;
+
     return loanCalculator.generateSchedule({
       principal,
       interestRate,
@@ -40,6 +42,7 @@ class LoanService {
       totalInstallments,
       startDate: data.start_date,
       firstDueDate: data.first_due_date,
+      paymentDay,
       customInstallments: data.custom_installments || null,
     });
   }
@@ -94,6 +97,21 @@ class LoanService {
     const scheduled = this.previewLoan(data);
     const summary = scheduled.summary;
 
+    if (summary.frequency === 'weekly') {
+      const dayRaw = data.payment_day || data.paymentDay;
+      if (!dayRaw) {
+        throw AppError.badRequest('Payment weekday is required for weekly repayment plans', [
+          { field: 'payment_day', message: 'Please select a payment weekday (Monday to Sunday)' },
+        ]);
+      }
+      const parsed = loanCalculator.parseWeekday(dayRaw);
+      if (!parsed) {
+        throw AppError.badRequest('Invalid payment weekday selected', [
+          { field: 'payment_day', message: 'Valid options: Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday' },
+        ]);
+      }
+    }
+
     const planCode = data.plan_code || (data.idempotency_key ? data.idempotency_key : `LN-${Date.now().toString().slice(-6)}`);
     const loanTitle = data.title || `${summary.frequency === 'weekly' ? 'Weekly' : 'Monthly'} Loan - ${planCode}`;
 
@@ -137,6 +155,7 @@ class LoanService {
       duration_in_months: summary.durationInMonths,
       first_due_date: summary.firstDueDate,
       final_due_date: summary.finalDueDate,
+      payment_day: summary.paymentDay || null,
       notes: data.notes || '',
     };
 
@@ -153,6 +172,7 @@ class LoanService {
         down_payment: data.down_payment || 0,
         total_installments: summary.totalInstallments,
         frequency: summary.frequency,
+        payment_day: summary.paymentDay || null,
         start_date: summary.startDate,
         end_date: summary.finalDueDate,
         status: 'active',
@@ -328,6 +348,7 @@ class LoanService {
       down_payment: Number(loan.down_payment) || 0,
       total_installments: loan.total_installments,
       frequency: loan.frequency,
+      payment_day: loan.payment_day || meta.payment_day || null,
       start_date: loan.start_date,
       end_date: loan.end_date,
       status: loan.status,

@@ -8,6 +8,54 @@
 const WEEKS_PER_YEAR = 52;
 const MONTHS_PER_YEAR = 12;
 
+const WEEKDAYS_MAP = {
+  sunday: 0,
+  monday: 1,
+  tuesday: 2,
+  wednesday: 3,
+  thursday: 4,
+  friday: 5,
+  saturday: 6,
+};
+
+const WEEKDAY_NAMES = [
+  'Sunday',
+  'Monday',
+  'Tuesday',
+  'Wednesday',
+  'Thursday',
+  'Friday',
+  'Saturday',
+];
+
+/**
+ * Validates and normalizes weekday input string (e.g. 'monday' -> { name: 'Monday', dayIndex: 1 })
+ */
+function parseWeekday(dayStr) {
+  if (!dayStr || typeof dayStr !== 'string') return null;
+  const key = dayStr.trim().toLowerCase();
+  if (WEEKDAYS_MAP[key] !== undefined) {
+    const dayIndex = WEEKDAYS_MAP[key];
+    return { name: WEEKDAY_NAMES[dayIndex], dayIndex };
+  }
+  return null;
+}
+
+/**
+ * Computes first due date aligned with the selected weekday.
+ * The first due date occurs on the next upcoming occurrence of that weekday (1 to 7 days after start date).
+ */
+function computeFirstDueDateForWeekday(startDate, targetDayIndex) {
+  const d = new Date(startDate);
+  const currentDay = d.getUTCDay();
+  let diff = targetDayIndex - currentDay;
+  if (diff <= 0) {
+    diff += 7;
+  }
+  d.setUTCDate(d.getUTCDate() + diff);
+  return d;
+}
+
 /**
  * Converts weekly duration into months using the standard calendar convention:
  * durationInMonths = durationInWeeks * (12 / 52)
@@ -33,6 +81,7 @@ function calculateLoanSummary({
   totalInstallments,
   startDate,
   firstDueDate,
+  paymentDay = null,
 }) {
   const p = roundToTwo(principal);
   const r = Number(interestRate); // Monthly interest percentage (e.g. 5 for 5%)
@@ -50,6 +99,7 @@ function calculateLoanSummary({
 
   const isWeekly = String(frequency).toLowerCase() === 'weekly';
   const durationInMonths = isWeekly ? weeksToMonths(n) : n;
+  const parsedWeekday = isWeekly ? parseWeekday(paymentDay) : null;
 
   // Simple Interest: Total Interest = Principal * (Monthly Rate / 100) * Duration in Months
   const monthlyInterest = roundToTwo(p * (r / 100));
@@ -61,7 +111,14 @@ function calculateLoanSummary({
   const roundingDiff = roundToTwo(totalRepayment - (baseInstallment * n));
 
   const start = startDate ? new Date(startDate) : new Date();
-  const firstDue = firstDueDate ? new Date(firstDueDate) : computeDefaultFirstDueDate(start, isWeekly);
+  let firstDue;
+  if (firstDueDate) {
+    firstDue = new Date(firstDueDate);
+  } else if (isWeekly && parsedWeekday) {
+    firstDue = computeFirstDueDateForWeekday(start, parsedWeekday.dayIndex);
+  } else {
+    firstDue = computeDefaultFirstDueDate(start, isWeekly);
+  }
 
   // Compute final due date
   const finalDueDate = isWeekly
@@ -72,6 +129,7 @@ function calculateLoanSummary({
     principal: p,
     monthlyInterestRate: r,
     frequency: isWeekly ? 'weekly' : 'monthly',
+    paymentDay: parsedWeekday ? parsedWeekday.name : null,
     totalInstallments: n,
     durationInMonths: roundToTwo(durationInMonths),
     monthlyInterest,
@@ -141,6 +199,7 @@ function generateSchedule({
   totalInstallments,
   startDate,
   firstDueDate,
+  paymentDay = null,
   customInstallments = null,
 }) {
   const summary = calculateLoanSummary({
@@ -150,6 +209,7 @@ function generateSchedule({
     totalInstallments,
     startDate,
     firstDueDate,
+    paymentDay,
   });
 
   const isWeekly = summary.frequency === 'weekly';
@@ -212,6 +272,10 @@ function generateSchedule({
 module.exports = {
   WEEKS_PER_YEAR,
   MONTHS_PER_YEAR,
+  WEEKDAYS_MAP,
+  WEEKDAY_NAMES,
+  parseWeekday,
+  computeFirstDueDateForWeekday,
   weeksToMonths,
   roundToTwo,
   calculateLoanSummary,

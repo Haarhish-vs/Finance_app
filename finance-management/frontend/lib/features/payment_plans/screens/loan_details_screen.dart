@@ -661,7 +661,9 @@ class _LoanDetailsScreenState extends State<LoanDetailsScreen> {
               ),
               const SizedBox(height: AppSpacing.xs),
               Text(
-                'Complete payment schedule with live tracking of Paid, Partially Paid, Pending, and Overdue statuses.',
+                loan.isWeekly && loan.paymentDay != null
+                    ? 'Weekly installment schedule with collection day on every ${loan.paymentDay}.'
+                    : 'Complete payment schedule with live tracking of Paid, Partially Paid, Pending, and Overdue statuses.',
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.textMutedLight),
               ),
               const SizedBox(height: AppSpacing.sm),
@@ -755,7 +757,7 @@ class _LoanDetailsScreenState extends State<LoanDetailsScreen> {
                     ),
                     const SizedBox(width: AppSpacing.sm),
                     Text(
-                      '${loan.frequency.toUpperCase()} • ${loan.totalInstallments} Periods',
+                      '${loan.frequency.toUpperCase()}${loan.paymentDay != null ? ' (${loan.paymentDay})' : ''} • ${loan.totalInstallments} Periods',
                       style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12.0),
                     ),
                   ],

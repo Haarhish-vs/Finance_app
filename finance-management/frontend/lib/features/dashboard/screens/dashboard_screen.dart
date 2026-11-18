@@ -13,6 +13,7 @@ import '../../installments/repositories/installment_repository.dart';
 import '../../payment_plans/models/loan_model.dart';
 import '../../payment_plans/repositories/loan_repository.dart';
 import '../../payment_plans/screens/loan_details_screen.dart';
+import '../widgets/weekly_collection_section.dart';
 
 /// Clean Executive Dashboard displaying financial metrics, active loans, and real customer activity
 class DashboardScreen extends StatefulWidget {
@@ -114,11 +115,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        'Financial Overview',
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
+                      Expanded(
+                        child: Text(
+                          'Financial Overview',
+                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                fontWeight: FontWeight.bold,
+                              ),
+                        ),
                       ),
                       IconButton(
                         icon: const Icon(Icons.refresh_rounded),
@@ -130,6 +133,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
                   // KPI Metrics Grid
                   _buildKpiGrid(context, constraints.maxWidth),
+                  const SizedBox(height: AppSpacing.lg),
+
+                  // Weekly Collection Overview Grouped by Weekday
+                  const WeeklyCollectionSection(),
                   const SizedBox(height: AppSpacing.lg),
 
                   // Quick Actions

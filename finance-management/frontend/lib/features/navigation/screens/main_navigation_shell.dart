@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../../../core/config/app_config.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
+import '../../auth/repositories/auth_repository.dart';
+import '../../auth/screens/login_screen.dart';
 import '../../customers/screens/customers_screen.dart';
 import '../../dashboard/screens/dashboard_screen.dart';
 import '../../payments/screens/payments_screen.dart';
@@ -129,9 +131,53 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
             ],
           ),
         ),
-        const SizedBox(width: AppSpacing.md),
+        const SizedBox(width: AppSpacing.xs),
+        IconButton(
+          tooltip: 'Sign Out',
+          icon: const Icon(Icons.logout_rounded, size: 20.0),
+          color: AppColors.textSecondaryLight,
+          onPressed: () => _confirmLogout(context),
+        ),
+        const SizedBox(width: AppSpacing.sm),
       ],
     );
+  }
+
+  Future<void> _confirmLogout(BuildContext context) async {
+    final shouldLogout = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.logout_rounded, color: AppColors.error),
+            SizedBox(width: AppSpacing.sm),
+            Text('Sign Out'),
+          ],
+        ),
+        content: const Text('Are you sure you want to end your admin session?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: AppColors.error),
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Sign Out'),
+          ),
+        ],
+      ),
+    );
+
+    if (shouldLogout == true && context.mounted) {
+      await AuthRepository().logout();
+      if (context.mounted) {
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (_) => const LoginScreen()),
+          (route) => false,
+        );
+      }
+    }
   }
 
   Widget _buildNavigationRail(BuildContext context) {

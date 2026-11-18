@@ -1,9 +1,12 @@
 const http = require('http');
+const jwt = require('jsonwebtoken');
 const app = require('../src/app');
+const env = require('../src/config/env');
 
 async function runTests() {
   const PORT = 5011;
   const server = app.listen(PORT);
+  const token = jwt.sign({ id: 'test-admin', email: 'ashokfinapp', role: 'admin' }, env.JWT_SECRET);
 
   function request(method, path, data = null) {
     return new Promise((resolve, reject) => {
@@ -15,6 +18,7 @@ async function runTests() {
         method,
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
           ...(payload ? { 'Content-Length': Buffer.byteLength(payload) } : {})
         }
       }, res => {

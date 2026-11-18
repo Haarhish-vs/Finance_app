@@ -53,6 +53,16 @@ class _CustomerFormDialogState extends State<CustomerFormDialog> {
   late final TextEditingController _durationController;
 
   String _frequency = 'monthly'; // 'monthly' or 'weekly'
+  static const List<String> _weekdays = [
+    'Monday',
+    'Tuesday',
+    'Wednesday',
+    'Thursday',
+    'Friday',
+    'Saturday',
+    'Sunday',
+  ];
+  String _selectedWeekday = 'Monday';
   DateTime _startDate = DateTime.now();
   DateTime _firstDueDate = DateTime.now().add(const Duration(days: 30));
 
@@ -113,9 +123,36 @@ class _CustomerFormDialogState extends State<CustomerFormDialog> {
     }
   }
 
+  int _weekdayNameToIndex(String name) {
+    switch (name) {
+      case 'Monday':
+        return DateTime.monday;
+      case 'Tuesday':
+        return DateTime.tuesday;
+      case 'Wednesday':
+        return DateTime.wednesday;
+      case 'Thursday':
+        return DateTime.thursday;
+      case 'Friday':
+        return DateTime.friday;
+      case 'Saturday':
+        return DateTime.saturday;
+      case 'Sunday':
+        return DateTime.sunday;
+      default:
+        return DateTime.monday;
+    }
+  }
+
   void _recomputeFirstDueDate() {
     if (_frequency == 'weekly') {
-      _firstDueDate = _startDate.add(const Duration(days: 7));
+      final targetDay = _weekdayNameToIndex(_selectedWeekday);
+      final currentDay = _startDate.weekday;
+      int diff = targetDay - currentDay;
+      if (diff <= 0) {
+        diff += 7;
+      }
+      _firstDueDate = _startDate.add(Duration(days: diff));
     } else {
       final y = _startDate.year;
       final m = _startDate.month + 1;
@@ -188,6 +225,7 @@ class _CustomerFormDialogState extends State<CustomerFormDialog> {
         principal: _currentPrincipal,
         interestRate: _currentRate,
         frequency: _frequency,
+        paymentDay: _frequency == 'weekly' ? _selectedWeekday : null,
         totalInstallments: _currentDuration,
         startDate: _formatDate(_startDate),
         firstDueDate: _formatDate(_firstDueDate),
@@ -328,6 +366,7 @@ class _CustomerFormDialogState extends State<CustomerFormDialog> {
       'principal': _currentPrincipal,
       'interest_rate': _currentRate,
       'frequency': _frequency,
+      if (_frequency == 'weekly') 'payment_day': _selectedWeekday,
       'total_installments': _currentDuration,
       'start_date': _formatDate(_startDate),
       'first_due_date': _formatDate(_firstDueDate),
@@ -864,6 +903,10 @@ class _CustomerFormDialogState extends State<CustomerFormDialog> {
                 },
               ),
             ),
+            if (_frequency == 'weekly') ...[
+              const SizedBox(height: AppSpacing.sm),
+              _buildWeekdaySelector(context),
+            ],
             const SizedBox(height: AppSpacing.sm),
 
             // Duration Field
@@ -1261,8 +1304,117 @@ class _CustomerFormDialogState extends State<CustomerFormDialog> {
                     ),
                   ],
                 ),
+                if (_frequency == 'weekly') ...[
+                  const SizedBox(height: AppSpacing.xs),
+                  Row(
+                    children: [
+                      const Icon(Icons.event_repeat_rounded, size: 14.0, color: AppColors.primary),
+                      const SizedBox(width: 4.0),
+                      Text(
+                        'Weekly Repayment Day: $_selectedWeekday',
+                        style: const TextStyle(
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ],
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildWeekdaySelector(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.sm + 2.0),
+      decoration: BoxDecoration(
+        color: AppColors.primaryContainer.withValues(alpha: 0.35),
+        borderRadius: AppSpacing.roundedSm,
+        border: Border.all(
+          color: AppColors.primary.withValues(alpha: 0.4),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(
+                Icons.calendar_view_week_rounded,
+                size: 16.0,
+                color: AppColors.primary,
+              ),
+              const SizedBox(width: AppSpacing.xs),
+              Text(
+                'Weekly Payment Day *',
+                style: theme.textTheme.labelMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.primary,
+                ),
+              ),
+              const Spacer(),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 2.0),
+                decoration: BoxDecoration(
+                  color: AppColors.primary,
+                  borderRadius: AppSpacing.roundedSm,
+                ),
+                child: Text(
+                  _selectedWeekday,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 11.0,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4.0),
+          Text(
+            'Select the weekday for customer repayment. Due dates are scheduled on this day.',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: AppColors.textMutedLight,
+              fontSize: 11.0,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Wrap(
+            spacing: 6.0,
+            runSpacing: 6.0,
+            children: _weekdays.map((day) {
+              final isSelected = _selectedWeekday == day;
+              return ChoiceChip(
+                label: Text(day),
+                selected: isSelected,
+                showCheckmark: true,
+                checkmarkColor: Colors.white,
+                labelStyle: TextStyle(
+                  color: isSelected ? Colors.white : AppColors.textPrimaryLight,
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                  fontSize: 12.0,
+                ),
+                selectedColor: AppColors.primary,
+                backgroundColor: AppColors.surfaceLight,
+                side: BorderSide(
+                  color: isSelected ? AppColors.primary : AppColors.borderLight,
+                ),
+                onSelected: (selected) {
+                  if (selected) {
+                    setState(() {
+                      _selectedWeekday = day;
+                      _recomputeFirstDueDate();
+                    });
+                  }
+                },
+              );
+            }).toList(),
           ),
         ],
       ),
