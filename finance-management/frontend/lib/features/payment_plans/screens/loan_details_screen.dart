@@ -916,6 +916,11 @@ class _LoanDetailsScreenState extends State<LoanDetailsScreen> {
   }
 
   Widget _buildInstallmentCard(InstallmentModel inst) {
+    final isWeekly = _loan?.isWeekly ?? inst.isWeekly;
+    final displayPeriod = isWeekly
+        ? 'Week ${inst.installmentNumber}'
+        : 'Month ${inst.installmentNumber}';
+
     Color statusBg;
     Color statusFg;
     String statusDisplay;
@@ -965,7 +970,7 @@ class _LoanDetailsScreenState extends State<LoanDetailsScreen> {
                         borderRadius: AppSpacing.roundedXs,
                       ),
                       child: Text(
-                        inst.periodLabel,
+                        displayPeriod,
                         style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.0, color: AppColors.primary),
                       ),
                     ),

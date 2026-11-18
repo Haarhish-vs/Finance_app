@@ -231,8 +231,9 @@ class InstallmentService {
       status = 'overdue';
     }
 
-    const frequency = item.payment_plans ? item.payment_plans.frequency : 'monthly';
-    const periodLabel = frequency === 'weekly'
+    const frequency = (item.payment_plans && item.payment_plans.frequency) || item.frequency || 'monthly';
+    const isWeekly = frequency.toLowerCase() === 'weekly';
+    const periodLabel = isWeekly
       ? `Week ${item.installment_number}`
       : `Month ${item.installment_number}`;
 
@@ -244,6 +245,8 @@ class InstallmentService {
       customer_name: item.customers ? item.customers.full_name : null,
       plan: item.payment_plans || null,
       plan_code: item.payment_plans ? item.payment_plans.plan_code : null,
+      frequency,
+      is_weekly: isWeekly,
       installment_number: item.installment_number,
       period_label: periodLabel,
       due_date: item.due_date,

@@ -5,6 +5,7 @@ class InstallmentModel {
   final String? customerId;
   final String? customerName;
   final String? planCode;
+  final String? frequency;
   final int installmentNumber;
   final String periodLabel;
   final String dueDate;
@@ -21,6 +22,7 @@ class InstallmentModel {
     this.customerId,
     this.customerName,
     this.planCode,
+    this.frequency,
     required this.installmentNumber,
     required this.periodLabel,
     required this.dueDate,
@@ -36,15 +38,26 @@ class InstallmentModel {
   bool get isPartiallyPaid => status.toLowerCase() == 'partially_paid' || (amountPaid > 0 && amountPaid < amountDue);
   bool get isOverdue => status.toLowerCase() == 'overdue';
   bool get isPending => status.toLowerCase() == 'pending' && !isOverdue;
+  bool get isWeekly => (frequency?.toLowerCase() == 'weekly') || periodLabel.toLowerCase().startsWith('week');
 
   factory InstallmentModel.fromJson(Map<String, dynamic> json) {
     final customer = json['customer'] as Map<String, dynamic>?;
-    final plan = json['plan'] as Map<String, dynamic>?;
+    final plan = json['plan'] as Map<String, dynamic>? ?? json['payment_plans'] as Map<String, dynamic>?;
 
     final due = (json['amount_due'] as num?)?.toDouble() ?? 0.0;
     final paid = (json['amount_paid'] as num?)?.toDouble() ?? 0.0;
     final outstanding = (json['outstanding_balance'] as num?)?.toDouble() ??
         (due > paid ? due - paid : 0.0);
+
+    final rawFrequency = json['frequency'] as String? ?? (plan != null ? plan['frequency'] as String? : null);
+    final number = (json['installment_number'] as num?)?.toInt() ?? 1;
+
+    final isWeek = (rawFrequency?.toLowerCase() == 'weekly') ||
+        (json['is_weekly'] == true) ||
+        (json['period_label'] as String?)?.toLowerCase().startsWith('week') == true;
+
+    final defaultPeriodLabel = isWeek ? 'Week $number' : 'Month $number';
+    final periodLabel = json['period_label'] as String? ?? defaultPeriodLabel;
 
     return InstallmentModel(
       id: json['id'] as String? ?? '',
@@ -54,8 +67,9 @@ class InstallmentModel {
           (customer != null ? customer['full_name'] as String? : null),
       planCode: json['plan_code'] as String? ??
           (plan != null ? plan['plan_code'] as String? : null),
-      installmentNumber: (json['installment_number'] as num?)?.toInt() ?? 1,
-      periodLabel: json['period_label'] as String? ?? 'Month ${json['installment_number'] ?? 1}',
+      frequency: rawFrequency,
+      installmentNumber: number,
+      periodLabel: periodLabel,
       dueDate: json['due_date'] as String? ?? '',
       amountDue: due,
       amountPaid: paid,
@@ -82,6 +96,7 @@ class InstallmentModel {
       customerId: customerId,
       customerName: customerName,
       planCode: planCode,
+      frequency: frequency,
       installmentNumber: installmentNumber,
       periodLabel: periodLabel,
       dueDate: dueDate ?? this.dueDate,

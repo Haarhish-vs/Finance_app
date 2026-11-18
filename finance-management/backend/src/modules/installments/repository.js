@@ -39,7 +39,7 @@ class InstallmentRepository {
     const supabase = getSupabaseClient();
     const { data, error } = await supabase
       .from('installments')
-      .select('*, customers(id, full_name, phone)')
+      .select('*, customers(id, full_name, phone), payment_plans(id, plan_code, title, frequency, notes)')
       .eq('plan_id', planId)
       .order('installment_number', { ascending: true });
 
@@ -54,7 +54,7 @@ class InstallmentRepository {
     const supabase = getSupabaseClient();
     let query = supabase
       .from('installments')
-      .select('*, customers(id, full_name, phone), payment_plans(id, plan_code, title, frequency)', { count: 'exact' });
+      .select('*, customers(id, full_name, phone), payment_plans(id, plan_code, title, frequency, notes)', { count: 'exact' });
 
     if (planId) {
       query = query.eq('plan_id', planId);
@@ -63,7 +63,21 @@ class InstallmentRepository {
       query = query.eq('customer_id', customerId);
     }
     if (status && status !== 'all') {
-      query = query.eq('status', status);
+      const todayStr = new Date().toISOString().split('T')[0];
+      if (status.toLowerCase() === 'overdue') {
+        // Installments that are not settled and whose due date has passed
+        query = query
+          .neq('status', 'paid')
+          .lt('due_date', todayStr);
+      } else if (status.toLowerCase() === 'paid') {
+        query = query.eq('status', 'paid');
+      } else if (status.toLowerCase() === 'pending') {
+        query = query
+          .eq('status', 'pending')
+          .gte('due_date', todayStr);
+      } else {
+        query = query.eq('status', status);
+      }
     }
 
     query = query

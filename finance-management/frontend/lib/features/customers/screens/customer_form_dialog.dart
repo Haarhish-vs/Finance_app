@@ -232,9 +232,11 @@ class _CustomerFormDialogState extends State<CustomerFormDialog> {
       );
 
       final list = preview.installments.map((inst) {
+        final instNum = inst['installment_number'] ?? 1;
+        final defaultPeriod = _frequency == 'weekly' ? 'Week $instNum' : 'Month $instNum';
         return {
-          'installment_number': inst['installment_number'] ?? 1,
-          'period_label': inst['period_label'] ?? 'Month 1',
+          'installment_number': instNum,
+          'period_label': inst['period_label'] ?? defaultPeriod,
           'due_date': inst['due_date'] ?? '',
           'amount_due': (inst['amount_due'] as num?)?.toDouble() ?? 0.0,
         };

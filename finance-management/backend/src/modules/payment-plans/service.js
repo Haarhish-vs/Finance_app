@@ -273,7 +273,7 @@ class LoanService {
 
     return {
       loan: enrichedLoan,
-      installments: installments.map((item) => this._formatInstallment(item)),
+      installments: installments.map((item) => this._formatInstallment(item, loan)),
     };
   }
 
@@ -404,7 +404,7 @@ class LoanService {
     };
   }
 
-  _formatInstallment(item) {
+  _formatInstallment(item, parentLoan = null) {
     const todayStr = new Date().toISOString().split('T')[0];
     const amountDue = Number(item.amount_due) || 0;
     const amountPaid = Number(item.amount_paid) || 0;
@@ -419,7 +419,8 @@ class LoanService {
       status = 'overdue';
     }
 
-    const isWeekly = item.payment_plans && item.payment_plans.frequency === 'weekly';
+    const frequency = (parentLoan && parentLoan.frequency) || (item.payment_plans && item.payment_plans.frequency) || item.frequency || 'monthly';
+    const isWeekly = frequency.toLowerCase() === 'weekly';
     const periodLabel = isWeekly
       ? `Week ${item.installment_number}`
       : `Month ${item.installment_number}`;
@@ -430,6 +431,8 @@ class LoanService {
       customer_id: item.customer_id,
       customer: item.customers || null,
       customer_name: item.customers ? item.customers.full_name : null,
+      frequency,
+      is_weekly: isWeekly,
       installment_number: item.installment_number,
       period_label: periodLabel,
       due_date: item.due_date,
